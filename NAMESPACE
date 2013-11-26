@@ -1,2 +1,3 @@
-export(load_all_data, get_bitcoincharts_data, get_most_recent_trade, get_symbol_listing, download_all_daily_dumps, find_outdated_local_dump)
+export(load_all_data, get_bitcoincharts_data, get_most_recent_trade, get_symbol_listing, download_all_daily_dumps)
+
 import(stringr, quantmod, XML, RCurl, stringr, lubridate, xts, zoo)
