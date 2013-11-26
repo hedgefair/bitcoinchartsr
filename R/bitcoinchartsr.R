@@ -399,7 +399,12 @@ get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() -
       # get the last five days of data from API and tack it on to the end of the current dump
       # then return the needed data
       message('Dump exists and is not yet stale, downloading missing data...')
-      prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data) # do this first
+      # clean up prepared data files first
+      f <- list.files(path=data.directory, full.names=TRUE, pattern='[0-9]{1,}\\.csv$') # get rid of processed files only
+      sapply(f, FUN=function(x) { 
+        #     message(paste('Deleting', x))
+        unlink(x) 
+      })
       ticks <- get_ticker(symbol=symbol, data.directory=data.directory)
       f <- sort(list.files(path=data.directory, pattern='[0-9]{1,}\\.csv$', full.names=FALSE))
       last.file <- f[ length(f) ]
@@ -409,7 +414,6 @@ get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() -
       last.ts <- get_most_recent_timestamp_in_dump(paste(data.directory, '/', symbol, '-dump.csv', sep=''))
       new.ticks <- new.ticks[ new.ticks[, 1] > last.ts, ]
       # now take the new ticks and add them to the dump file (note we might gain or lose a few ticks occassionally... need to test and see how important this effect is...)
-#       cat(file=paste(data.directory, '/', symbol, '-dump.csv', sep=''), '===================================', sep='\n', append=TRUE)
       write.table(file=paste(data.directory, '/', symbol, '-dump.csv', sep=''), new.ticks, sep=',', append=TRUE, eol='\n', row.names=FALSE, col.names=FALSE)
       prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data) # do this first
       tickdata <- get_trade_data(symbol=symbol, start.date=start.date, end.date=end.date, data.directory=data.directory)
