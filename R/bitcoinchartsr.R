@@ -406,7 +406,7 @@ get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() -
         unlink(x) 
       })
       ticks <- get_ticker(symbol=symbol, data.directory=data.directory)
-      f <- sort(list.files(path=data.directory, pattern='[0-9]{1,}\\.csv$', full.names=FALSE))
+      f <- sort(list.files(path=data.directory, pattern='[0-9]{1,}\\.csv$', full.names=TRUE))
       last.file <- f[ length(f) ]
       # now take the data from the last file 
       # find the intersection of the two date vectors
