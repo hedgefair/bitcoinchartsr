@@ -32,6 +32,8 @@ find_outdated_local_dump <- function(data.directory=system.file('extdata', 'mark
 # =======================================================================================================
 download_daily_dump <- function(symbol, data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), overwrite=FALSE) {
   full.path <- paste(data.directory, '/', symbol, '-dump.csv', sep='')
+  # make sure the directory exists
+  if(!file.exists(data.directory)) dir.create(data.directory)
   if(file.exists(full.path)) {
     if(!overwrite) {
       message(paste(full.path, 'already exists, skipping download...'))
