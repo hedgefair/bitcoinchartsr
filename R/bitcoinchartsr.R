@@ -11,6 +11,7 @@
 # e.g. http://api.bitcoincharts.com/v1/csv/mtgoxUSD
 # =======================================================================================================
 download_daily_dump <- function(symbol, data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), overwrite=FALSE) {
+  if(!file.exists(data.directory)) dir.create(data.directory)
   full.path <- paste(data.directory, '/', symbol, '-dump.csv', sep='')
   if(file.exists(full.path)) {
     if(!overwrite) {
