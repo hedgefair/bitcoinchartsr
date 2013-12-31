@@ -354,7 +354,7 @@ to.ohlc.xts <- function(ttime, tprice, tvolume, fmt) {
 # ohlc.frequency = minutes, hourly, daily, monthly, seconds
 # download.data = whether or not to perform a fresh download of daily data dump file
 # ==============================================================================================
-get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() - months(1))), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency = 'hours', data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), download.data=FALSE, overwrite=FALSE, auto.assign=FALSE, environment=.GlobalEnv) {
+get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() - month(1))), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency = 'hours', data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), download.data=FALSE, overwrite=FALSE, auto.assign=FALSE, environment=.GlobalEnv) {
   call <- match.call()
   if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
     stop("OHLC frequency must be one of following: seconds, minutes, hours, days, months, years")
@@ -411,7 +411,7 @@ get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() -
 # download.data = whether or not to re-download data files
 # defaults will result in one month worth of daily data being pulled for all exchanges
 # ==============================================================================================
-load_all_data <- function(data.base.dir=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), start.date=as.character(Sys.Date() - months(1)), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency='daily', download.data=FALSE) {
+load_all_data <- function(data.base.dir=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), start.date=as.character(Sys.Date() - month(1)), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency='daily', download.data=FALSE) {
   all.symbols <- get_symbol_listing()
   dev.null <- sapply(all.symbols, function(x) {
     message(paste('Loading', x, '...'))
