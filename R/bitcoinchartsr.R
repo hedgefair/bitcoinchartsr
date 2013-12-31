@@ -6,31 +6,12 @@
 # library(lubridate)
 
 # =======================================================================================================
-# Checks the last available tick in a data file, if the last tick is older than the threshold specified
-# in the days.until.stale parameter, the name of the file is returned (i.e. the file is old and a new
-# dump for the exchange should be downloaded!)
-# =======================================================================================================
-find_outdated_local_dump <- function(data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), days.until.stale=5) {
-  file.list <- grep(x=list.files(data.directory, recursive=TRUE, full.names=TRUE), pattern='dump\\.csv$', value=TRUE)
-  res <- lapply(file.list, function(x) {
-    last.ts <- as.numeric(unlist(strsplit(system(command=paste('tail -n 1 ', x), intern=TRUE, ignore.stderr=TRUE),split=','))[1])
-    if(as.POSIXct(last.ts, tz='GMT', origin='1970-01-01') < as.POSIXct(Sys.Date() - days(days.until.stale))) {
-      return(x)
-    } else {
-      return(NA)
-    }
-  })
-  res <- unlist(res)
-  res <- res[ !is.na(res) ]
-  res
-}
-
-# =======================================================================================================
 # Download daily full dump for specified symbol at:
 # http://api.bitcoincharts.com/v1/csv/
 # e.g. http://api.bitcoincharts.com/v1/csv/mtgoxUSD
 # =======================================================================================================
 download_daily_dump <- function(symbol, data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), overwrite=FALSE) {
+  if(!file.exists(data.directory)) dir.create(data.directory)
   full.path <- paste(data.directory, '/', symbol, '-dump.csv', sep='')
   # make sure the directory exists
   if(!file.exists(data.directory)) dir.create(data.directory)
@@ -113,33 +94,21 @@ get_exchange_info <- function(markets.url = 'http://bitcoincharts.com/markets/')
 }
 
 # =======================================================================================================
-# Utility function which returns the last trade in PREPARED DATA
+# Utility function which returns the last trade in the most recent daily dump file
 # =======================================================================================================
-get_most_recent_trade <- function(symbol, data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), sep='/')) {
+get_most_recent_trade <- function(symbol, data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/')) {
   if(!file.exists(data.directory)) stop('Data directory is missing!') # we should just download the files instead of punking out here...
   f <- list.files(path=data.directory, pattern='-[0-9]{1,}\\.csv$', full.names=TRUE)
   f <- sort(f)
-  if(length(f) == 0) stop('Please run prepare_historical_data first...')
   new.rows <- read.csv(f[ length(f) ], header=FALSE, sep=',', colClasses=c('numeric','numeric','numeric'), col.names=c('timestamp','price','amount'))   
   return(new.rows[ nrow(new.rows),  ])
-}
-
-# =======================================================================================================
-# Utility function which returns the last timestamp in dump file
-# =======================================================================================================
-get_most_recent_timestamp_in_dump <- function(file.path) {
-  if(!file.exists(file.path)) stop('Can not find specified dump file!') # we should just download the files instead of punking out here...
-  last.ts <- unlist(strsplit(system(command=paste('tail -n 1 ', file.path), intern=TRUE, ignore.stderr=TRUE),split=','))[1]
-  last.ts
 }
 
 # =======================================================================================================
 # Download all historical trade data for a given symbol from bitcoincharts.com 
 # and split into 20000-line csv files
 # =======================================================================================================
-prepare_historical_data <- function(symbol, data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), download.daily.dump) {
-  # delete the lock file
-  unlink(paste(data.directory, 'done.lck', sep='/'), force=TRUE)
+prepare_historical_data <- function(symbol, data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), download.daily.dump, overwrite) {
   # first delete all existing data in the directory
 #   message(paste("Removing old processed data in directory (leaving dump file intact)", data.directory))
   f <- list.files(path=data.directory, full.names=TRUE, pattern='[0-9]{1,}\\.csv$') # get rid of processed files only
@@ -150,12 +119,12 @@ prepare_historical_data <- function(symbol, data.directory=system.file('extdata'
   # now download the huge daily dump file
   dump.file <- ''
   if(download.daily.dump) {
-    dump.file <- download_daily_dump(symbol=symbol, data.directory=data.directory)  
+    dump.file <- download_daily_dump(symbol=symbol, data.directory=data.directory, overwrite)  
   } else {
     dump.file <- paste(data.directory, '/', symbol, '-dump.csv', sep='')
     if(!file.exists(dump.file)) {
       # file is missing download it!
-      dump.file <- download_daily_dump(symbol=symbol, data.directory=data.directory)  
+      dump.file <- download_daily_dump(symbol=symbol, data.directory=data.directory, overwrite)  
     }
   }
   # now let's process our dump file
@@ -202,28 +171,22 @@ prepare_historical_data <- function(symbol, data.directory=system.file('extdata'
       }  
     })
   })
-  file.create(paste(data.directory, 'done.lck', sep='/'), showWarnings=TRUE)
   dump.file
 }
 
 # =======================================================================================================
 # get the most recent data
 # http://api.bitcoincharts.com/v1/trades.csv?symbol=SYMBOL[&end=UNIXTIME]
-# leave the file behind
 # =======================================================================================================
-get_ticker <- function(symbol, end = '', data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr')) {
-  file.name <- paste(symbol, 'XXXXXXXXXX', sep='-')
-  if(end != '') {
-    file.name <- paste(file.name, as.character(end), sep='-')  
-  } else {
-    file.name <- paste(file.name, 'YYYYYYYYYY', sep='-')
+get_most_recent_ohlc <- function(symbol, data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), ohlc.frequency) {
+  call <- match.call()
+  if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
+    stop("OHLC frequency must be one of following: seconds, minutes, hours, days, months, years")
   }
+  file.name <- paste(symbol, 'XXXXXXXXXX', sep='-')
   file.name <- paste(file.name, 'csv', sep='.')
   ColClasses = c('numeric','numeric','numeric')
   url <- paste('http://api.bitcoincharts.com/v1/trades.csv?symbol=', symbol, sep='')
-  if(end != '') {
-    url <- paste(url, '&end=', end, sep='')  
-  }
   full.path <- paste(data.directory,file.name,sep='/')
   download.file(url, destfile=full.path, method='auto', quiet = FALSE, mode = "w", cacheOK = TRUE, extra = getOption("download.file.extra"))
   # now we need to find the last timestamp downloaded to complete the file name
@@ -235,7 +198,27 @@ get_ticker <- function(symbol, end = '', data.directory=system.file('extdata', '
   file.name <- gsub(file.name,pattern='YYYYYYYYYY',replacement=latest.timestamp)
   new.full.path <- paste(data.directory,file.name,sep='/')
   file.rename(full.path, new.full.path)
-  return(earliest.timestamp)
+  tickdata <- read.csv(new.full.path, header=FALSE, sep=',', colClasses=c('numeric','numeric','numeric'), col.names=c('timestamp','price','amount'))
+  if(ohlc.frequency == 'seconds') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M %S")  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - seconds(1)
+  } else if(ohlc.frequency == 'minutes') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M")
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - minutes(1)
+  } else if(ohlc.frequency == 'hours') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H")  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - hours(1)
+  } else if(ohlc.frequency == 'days') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d")  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - days(1)
+  } else if(ohlc.frequency == 'months') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m")  
+  } else if(ohlc.frequency == 'years') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y")  
+  }
+  colnames(ohlc.data.xts) <- c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks')
+  unlink(new.full.path, force=TRUE)
+  return(ohlc.data.xts)
 }
 
 # =======================================================================================================
@@ -244,7 +227,7 @@ get_ticker <- function(symbol, end = '', data.directory=system.file('extdata', '
 # time period
 # =======================================================================================================
 get_trade_data <- function(symbol, start.date, end.date='', data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/')) {
-  start.ts <- as.integer(as.POSIXct(as.Date(start.date), tz='GMT', origin='1970-01-01'))
+  start.ts <- as.integer(as.POSIXct(as.Date(start.date), tz='UTC', origin='1970-01-01'))
   # find start file index
   f <- sort(list.files(path=data.directory, pattern='[0-9]{1,}\\.csv$', full.names=FALSE))
   start.idx <- 1
@@ -257,7 +240,7 @@ get_trade_data <- function(symbol, start.date, end.date='', data.directory=paste
   }
   # find the end file index
   if(end.date != '') {
-    end.ts <- as.integer(as.POSIXct(as.Date(end.date), tz='GMT', origin='1970-01-01'))  
+    end.ts <- as.integer(as.POSIXct(as.Date(end.date), tz='UTC', origin='1970-01-01'))  
     for(i in 1:length(f)) {
       if(end.ts <= str_replace(unlist(strsplit(f[i], split='-'))[3], pattern='\\.csv', replacement='')) {
         end.idx <- i
@@ -296,7 +279,7 @@ get_trade_data <- function(symbol, start.date, end.date='', data.directory=paste
   tickdata <- tickdata[ tickdata$timestamp >= start.ts, ]
   # ok now if no end.date is specified we need to work our way backwards to the last available data
   if(end.date == '') {
-    end.ts <- as.integer(as.POSIXct(Sys.time() + days(1), tz='GMT', origin='1970-01-01'))  
+    end.ts <- as.integer(as.POSIXct(Sys.time() + days(1), tz='UTC', origin='1970-01-01'))  
   } else {
     if(as.integer(tickdata[ nrow(tickdata), 'timestamp']) > end.ts) {
       # required data is already present, now filter out stuff that exceeds specified end.date
@@ -373,55 +356,8 @@ to.ohlc.xts <- function(ttime, tprice, tvolume, fmt) {
 # ohlc.frequency = minutes, hourly, daily, monthly, seconds
 # download.data = whether or not to perform a fresh download of daily data dump file
 # ==============================================================================================
-get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() - months(1))), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency = 'hours', data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), download.data=FALSE, auto.assign=FALSE, environment=.GlobalEnv, days.until.stale=5) {
-  
+get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() - month(1))), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency = 'hours', data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), download.data=FALSE, overwrite=FALSE, auto.assign=FALSE, environment=.GlobalEnv) {
   call <- match.call()
-  
-  tickdata <- NA
-  # OK we know that we can use the get_ticker method to pull 5 days of tick data directly from the API
-  # if we need more data than this we will download the dump file
-  if(as.Date(start.date) > (Sys.Date() - days(days.until.stale))) {
-    # we can pull data directly from API
-    # download data file
-    # get trade data
-    message('Recent data pulled directly from API...')
-    ticks <- get_ticker(symbol=symbol, data.directory=data.directory)
-    tickdata <- get_trade_data(symbol=symbol, start.date=start.date, end.date=end.date, data.directory=data.directory)
-  } else {
-    # check if dump is stale or does not exist
-    stale.dumps <- find_outdated_local_dump(data.directory)
-    if((paste(data.directory, '/', symbol, '-dump.csv', sep='') %in% stale.dumps) | !file.exists((paste(data.directory, '/', symbol, '-dump.csv', sep='')))) {
-      message('Dump either does not exist or is outdated. Downloading now...')
-      # we need to redownload the dump
-      download_daily_dump(symbol=symbol, data.directory=data.directory, overwrite=TRUE)
-      prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data)
-      tickdata <- get_trade_data(symbol=symbol, start.date=start.date, end.date=end.date, data.directory=data.directory)
-    } else {
-      # the dump is still viable
-      # get the last five days of data from API and tack it on to the end of the current dump
-      # then return the needed data
-      message('Dump exists and is not yet stale, downloading missing data...')
-      # clean up prepared data files first
-      f <- list.files(path=data.directory, full.names=TRUE, pattern='[0-9]{1,}\\.csv$') # get rid of processed files only
-      sapply(f, FUN=function(x) { 
-        #     message(paste('Deleting', x))
-        unlink(x) 
-      })
-      ticks <- get_ticker(symbol=symbol, data.directory=data.directory)
-      f <- sort(list.files(path=data.directory, pattern='[0-9]{1,}\\.csv$', full.names=TRUE))
-      last.file <- f[ length(f) ]
-      # now take the data from the last file 
-      # find the intersection of the two date vectors
-      new.ticks <- read.csv(last.file, header=FALSE, sep=',')
-      last.ts <- get_most_recent_timestamp_in_dump(paste(data.directory, '/', symbol, '-dump.csv', sep=''))
-      new.ticks <- new.ticks[ new.ticks[, 1] > last.ts, ]
-      # now take the new ticks and add them to the dump file (note we might gain or lose a few ticks occassionally... need to test and see how important this effect is...)
-      write.table(file=paste(data.directory, '/', symbol, '-dump.csv', sep=''), new.ticks, sep=',', append=TRUE, eol='\n', row.names=FALSE, col.names=FALSE)
-      prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data) # do this first
-      tickdata <- get_trade_data(symbol=symbol, start.date=start.date, end.date=end.date, data.directory=data.directory)
-    }
-  }
-  
   if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
     stop("OHLC frequency must be one of following: seconds, minutes, hours, days, months, years")
   }
@@ -431,32 +367,34 @@ get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() -
   if(!(str_detect(end.date, pattern='[0-9]{4}-[0-9]{2}-[0-9]{2}'))) {
     stop("end.date must be in YYYY-MM-DD format")
   }
-#   message(paste('Preparing historical data for: ', symbol, sep=''))
-  #   browser()
-  #   if(file.exists(paste(data.directory, 'done.lck', sep='/'))) {
-  #     if(download.data) {
-  #       prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data)       
-  #     }
-  #     message('Data already prepared')
-  #   } else {
-#   prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data)       
-  #   }
+  prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data, overwrite)       
   message(paste('Getting tick data for: ', symbol, sep=''))
-#   tickdata <- get_trade_data(symbol=symbol, data.directory=data.directory, start.date=start.date, end.date=end.date)
+  tickdata <- get_trade_data(symbol=symbol, data.directory=data.directory, start.date=start.date, end.date=end.date)
   if(ohlc.frequency == 'seconds') {
-    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='GMT',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M %S")  
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M %S")  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - seconds(1)
   } else if(ohlc.frequency == 'minutes') {
-    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='EDT',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M")
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M")
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - minutes(1)
   } else if(ohlc.frequency == 'hours') {
-    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='EDT',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H")  
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H")  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - hours(1)
   } else if(ohlc.frequency == 'days') {
-    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='EDT',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d")  
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d")  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - days(1)
   } else if(ohlc.frequency == 'months') {
-    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='EDT',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m")  
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m")  
   } else if(ohlc.frequency == 'years') {
-    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='GMT',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y")  
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y")  
   }
   colnames(ohlc.data.xts) <- c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks')
+  # OK now we have data up to a certain point, if our end date is today, get every last bit of data
+  if(as.Date(end.date) >= Sys.Date()) {
+    recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency)
+    if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+    # now add the most recent on to what we have obtained from the dump
+    ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ])
+  }
   if(!auto.assign) {
     # return to caller
     return(ohlc.data.xts)  
@@ -475,7 +413,7 @@ get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() -
 # download.data = whether or not to re-download data files
 # defaults will result in one month worth of daily data being pulled for all exchanges
 # ==============================================================================================
-load_all_data <- function(data.base.dir=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), start.date=as.character(Sys.Date() - months(1)), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency='daily', download.data=FALSE) {
+load_all_data <- function(data.base.dir=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), start.date=as.character(Sys.Date() - month(1)), end.date=as.character(Sys.Date() + days(1)), ohlc.frequency='daily', download.data=FALSE) {
   all.symbols <- get_symbol_listing()
   dev.null <- sapply(all.symbols, function(x) {
     message(paste('Loading', x, '...'))
