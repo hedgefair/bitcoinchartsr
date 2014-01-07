@@ -242,7 +242,7 @@ get_bitcoincharts_data <- function(symbol,
                                    overwrite=FALSE, 
                                    auto.assign=FALSE, 
                                    env=.GlobalEnv,
-                                   debug=TRUE) {
+                                   debug=FALSE) {
   if(system('which tail', ignore.stdout=TRUE, ignore.stderr=TRUE) != 0) stop('Unfortunately this package currently relies on the "tail" binary usually found on Linux/Unix systems...')
   call <- match.call()
   if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
@@ -306,7 +306,7 @@ load_all_data <- function(data.base.dir=system.file('extdata', 'market-data', mu
                           end.date=as.character(Sys.Date() + days(1)), 
                           ohlc.frequency='daily', 
                           download.data=FALSE,
-                          debug=TRUE) {
+                          debug=FALSE) {
   if(system('which tail', ignore.stdout=TRUE, ignore.stderr=TRUE) != 0) stop('Unfortunately this package currently relies on the "tail" binary usually found on Linux/Unix systems...')
   all.symbols <- get_symbol_listing()
   dev.null <- sapply(all.symbols, function(x) {
@@ -473,7 +473,7 @@ get_exchange_info <- function(debug=FALSE) {
 get_most_recent_trade <- function(symbol, 
                                   ohlc.frequency='hours',
                                   data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'),
-                                  debug=TRUE) {
+                                  debug=FALSE) {
   if(system('which tail', ignore.stdout=TRUE, ignore.stderr=TRUE) != 0) stop('Unfortunately this function currently relies on the "tail" binary usually found on Linux/Unix systems. "tail" was not found on your system path!')
   if(system('which head', ignore.stdout=TRUE, ignore.stderr=TRUE) != 0) stop('Unfortunately this function currently relies on the "head" binary usually found on Linux/Unix systems. "head" was not found on your system path!')
   call <- match.call()
