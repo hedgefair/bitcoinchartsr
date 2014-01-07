@@ -40,8 +40,8 @@ prepare_historical_data <- function(symbol,
   # rename all to .csv
   f <- list.files(path=data.directory, pattern=paste(symbol, '-[0-9]{5}$',sep=''), full.names=TRUE)
   sapply(f, FUN=function(x) { 
-    last.date <- unlist(strsplit(system(command=paste('tail -n 1 ', x), intern=TRUE, ignore.stderr=TRUE),split=','))[1]
-    first.date <- unlist(strsplit(system(command=paste('head -n 1 ', x), intern=TRUE, ignore.stderr=TRUE),split=','))[1]
+    last.date <- suppressWarnings(unlist(strsplit(system(command=paste('tail -n 1 ', x), intern=TRUE, ignore.stderr=TRUE),split=','))[1])
+    first.date <- suppressWarnings(unlist(strsplit(system(command=paste('head -n 1 ', x), intern=TRUE, ignore.stderr=TRUE),split=','))[1])
     x.new <- gsub(pattern='[0-9]{5}', replacement=paste(first.date, last.date, sep='-'), x=x)
     x.new <- paste(x.new, 'csv', sep='.')
     file.rename(x, x.new) 
@@ -51,7 +51,7 @@ prepare_historical_data <- function(symbol,
   results<- sapply(f, FUN=function(x) { 
     # we put the try here because files in the original list may no longer exist after shuffling ticks and renaming
     try(silent=TRUE, expr={
-      last.date <- unlist(strsplit(system(command=paste('tail -n 1 ', x), intern=TRUE, ignore.stderr=TRUE),split=','))[1]
+      last.date <- suppressWarnings(unlist(strsplit(system(command=paste('tail -n 1 ', x), intern=TRUE, ignore.stderr=TRUE),split=','))[1])
       if(length(grep(last.date, x=f)) > 1) {
         # last.date of one file is the start.date of another, need to shuffle
         files <- sort(grep(last.date, x=f, value=TRUE))
@@ -172,6 +172,7 @@ to.ohlc.xts <- function(ttime,
                         align, 
                         fill) 
 {
+  if(fill) align <- TRUE
   ttime.int <- format(ttime,fmt)
   df <- data.frame(time = ttime[tapply(1:length(ttime),ttime.int,function(x) {head(x,1)})],
                    Open = tapply(tprice,ttime.int,function(x) {head(x,1)}), 
@@ -181,25 +182,27 @@ to.ohlc.xts <- function(ttime,
                    Volume = tapply(as.numeric(tvolume),ttime.int,function(x) {sum(x)}),
                    Ticks = tapply(as.numeric(tvolume),ttime.int, length))
   # fill in any missing time slots and align along an appropriate boundary (minute, hour or day)
-  if(fmt == '%Y%m%d %H %M %S') {
-    if(align) ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=1)  
-    if(align) idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=1), n=1)
-  } else if(fmt == '%Y%m%d %H %M') {
-    if(align) ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=60)  
-    if(align) idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=60), n=60)
-  } else if(fmt == '%Y%m%d %H') {
-    if(align) ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=60*60) 
-    if(align) idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=60*60), n=60*60)
-  } else if(fmt == '%Y%m%d') {
-    if(align) ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=60*60*24) 
-    if(align) idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=60*60*24), n=60*60*24)
-  } else if(fmt == '%Y%m') {
-    ohlc.xts <- as.xts(df[2:7], order.by=df$time)
-    return(ohlc.xts)
-  } else if(fmt == '%Y') {
-    ohlc.xts <- as.xts(df[2:7], order.by=df$time)
-    return(ohlc.xts)
-  } 
+  if(align) {
+    if(fmt == '%Y%m%d %H %M %S') {
+      ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=1)  
+      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=1), n=1)
+    } else if(fmt == '%Y%m%d %H %M') {
+      ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=60)  
+      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=60), n=60)
+    } else if(fmt == '%Y%m%d %H') {
+      ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=60*60) 
+      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=60*60), n=60*60)
+    } else if(fmt == '%Y%m%d') {
+      ohlc.xts <- align.time(as.xts(df[2:7], order.by=df$time), n=60*60*24) 
+      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by=60*60*24), n=60*60*24)
+    } else if(fmt == '%Y%m') {
+      ohlc.xts <- as.xts(df[2:7], order.by=df$time)
+      return(ohlc.xts)
+    } else if(fmt == '%Y') {
+      ohlc.xts <- as.xts(df[2:7], order.by=df$time)
+      return(ohlc.xts)
+    }   
+  } else ohlc.xts <- as.xts(df[2:7], order.by=df$time)
   if(fill) {
     empties <- data.frame(Open = rep(NA, times=length(idx)),
                           High = rep(NA, times=length(idx)),
@@ -291,7 +294,7 @@ get_bitcoincharts_data <- function(symbol,
   # OK now we have data up to a certain point, if our end date is today, get every last bit of data
   if(as.Date(end.date) >= Sys.Date()) {
     if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
-    recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, debug)
+    recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, debug=debug)
     if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
     # now add the most recent on to what we have obtained from the dump
     ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ])
@@ -564,8 +567,8 @@ get_most_recent_ohlc <- function(symbol,
   full.path <- paste(data.directory,file.name,sep='/')
   download.file(url, destfile=full.path, method='auto', quiet = !debug, mode = "w", cacheOK = TRUE, extra = getOption("download.file.extra"))
   # now we need to find the last timestamp downloaded to complete the file name
-  last.line <- system(command=paste('tail -n 1 ', full.path), intern=TRUE, ignore.stderr=TRUE)
-  first.line <- system(command=paste('head -n 1 ', full.path), intern=TRUE, ignore.stderr=TRUE)
+  last.line <- suppressWarnings(system(command=paste('tail -n 1 ', full.path), intern=TRUE, ignore.stderr=TRUE))
+  first.line <- suppressWarnings(system(command=paste('head -n 1 ', full.path), intern=TRUE, ignore.stderr=TRUE))
   earliest.timestamp <- unlist(str_split(last.line,pattern=','))[1]
   latest.timestamp <- unlist(str_split(first.line,pattern=','))[1]
   file.name <- gsub(file.name,pattern='XXXXXXXXXX',replacement=earliest.timestamp)
