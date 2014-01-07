@@ -367,7 +367,7 @@ get_bitcoincharts_data <- function(symbol, start.date=as.character((Sys.Date() -
   if(!(str_detect(end.date, pattern='[0-9]{4}-[0-9]{2}-[0-9]{2}'))) {
     stop("end.date must be in YYYY-MM-DD format")
   }
-  prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data, overwrite)       
+  prepare_historical_data(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data, overwrite=overwrite)       
   message(paste('Getting tick data for: ', symbol, sep=''))
   tickdata <- get_trade_data(symbol=symbol, data.directory=data.directory, start.date=start.date, end.date=end.date)
   if(ohlc.frequency == 'seconds') {
