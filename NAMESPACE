@@ -1,2 +1,2 @@
-export(load_all_data, get_bitcoincharts_data, get_most_recent_trade, get_symbol_listing, download_all_daily_dumps, get_most_recent_ohlc)
+export(load_all_data, get_bitcoincharts_data, get_most_recent_trade, get_symbol_listing, download_all_daily_dumps, get_most_recent_ohlc, download_dump)
 import(stringr, quantmod, XML, RCurl, stringr, lubridate, xts, zoo)
