@@ -11,8 +11,8 @@ Download tick data for all exchanges listed on bitcoincharts.com using v1 of the
 \tabular{ll}{
 Package: \tab bitcoinchartsr\cr
 Type: \tab Package\cr
-Version: \tab 0.1\cr
-Date: \tab 2013-11-15\cr
+Version: \tab 0.5\cr
+Date: \tab 2014-01-7\cr
 License: \tab GPL v3\cr
 }
 You can use this API to download data one exchange at a time. For example: the following code will download tick data for the cavirtex.com exchange (currency symbol: virtexCAD) to the "data" directory in CSV format. The CSV file will then be parsed and an xts OHLCV object (includes field called "Ticks", which is equal to number of trades executed during the period) with one-minute periodicity will be returned.

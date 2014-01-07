@@ -4,6 +4,10 @@ library(RCurl)
 library(stringr)
 library(lubridate)
 
+# ----------------------------------------------------------------------------------------------
+# INTERNAL (PRIVATE) FUNCTIONS
+# ----------------------------------------------------------------------------------------------
+
 # =======================================================================================================
 # Download all historical trade data for a given symbol from bitcoincharts.com 
 # and split into 20000-line csv files
@@ -223,6 +227,10 @@ to.ohlc.xts <- function(ttime,
   ohlc.xts[1:(nrow(ohlc.xts) - 1), ]
 }
 
+# ----------------------------------------------------------------------------------------------
+# EXPORTED (PUBLIC) FUNCTIONS
+# ----------------------------------------------------------------------------------------------
+
 #' @title Query bitcoincharts.com API
 #'
 #' @description Query bitcoincharts.com API to obtain market data for bitcoin exchanges
@@ -250,7 +258,7 @@ get_bitcoincharts_data <- function(symbol,
                                    start.date=as.character(Sys.Date() - lubridate::days(30)), 
                                    end.date=as.character(Sys.Date() + lubridate::days(1)), 
                                    ohlc.frequency = 'hours', 
-                                   align=FALSE,
+                                   align=TRUE,
                                    fill=FALSE,
                                    data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), 
                                    download.data=FALSE, 
@@ -333,7 +341,7 @@ get_bitcoincharts_data <- function(symbol,
 load_all_data <- function(start.date=as.character(Sys.Date() - days(30)), 
                           end.date=as.character(Sys.Date() + days(1)), 
                           ohlc.frequency='days', 
-                          align=FALSE,
+                          align=TRUE,
                           fill=FALSE,
                           data.base.dir=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), 
                           download.data=FALSE,
@@ -510,7 +518,7 @@ get_exchange_info <- function(debug=FALSE)
 #' }
 get_most_recent_trade <- function(symbol, 
                                   ohlc.frequency='hours',
-                                  align=FALSE,
+                                  align=TRUE,
                                   fill=FALSE,
                                   data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'),
                                   debug=FALSE) 
@@ -545,9 +553,9 @@ get_most_recent_trade <- function(symbol,
 get_most_recent_ohlc <- function(symbol, 
                                  data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), 
                                  ohlc.frequency='hours', 
-                                 align=FALSE,
+                                 align=TRUE,
                                  fill=FALSE,
-                                 debug) 
+                                 debug=FALSE) 
 {
   if(system('which tail', ignore.stdout=TRUE, ignore.stderr=TRUE) != 0) stop('Unfortunately this function currently relies on the "tail" binary usually found on Linux/Unix systems. "tail" was not found on your system path!')
   if(system('which head', ignore.stdout=TRUE, ignore.stderr=TRUE) != 0) stop('Unfortunately this function currently relies on the "head" binary usually found on Linux/Unix systems. "head" was not found on your system path!')
