@@ -224,7 +224,8 @@ to.ohlc.xts <- function(ttime,
     ohlc.xts[ ,'Close' ] <- na.locf(ohlc.xts$Close)
     ohlc.xts[ missing.vals, c('Open', 'High', 'Low')] <- ohlc.xts[ missing.vals, 'Close']  
   }
-  ohlc.xts[1:(nrow(ohlc.xts) - 1), ]
+#   ohlc.xts[1:(nrow(ohlc.xts) - 1), ]
+  ohlc.xts
 }
 
 # ----------------------------------------------------------------------------------------------
