@@ -301,7 +301,7 @@ get_bitcoincharts_data <- function(symbol,
   }
   colnames(ohlc.data.xts) <- c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks')
   # OK now we have data up to a certain point, if our end date is today, get every last bit of data
-  if(as.Date(end.date) >= Sys.Date()) {
+  if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
     if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
     recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
     if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
