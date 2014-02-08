@@ -403,7 +403,6 @@ download_daily_dump <- function(symbol,
   download.file(url, destfile=full.path, method='auto', quiet=!debug, mode="w", cacheOK=TRUE, extra=getOption("download.file.extra"))
   if(debug) message(paste0('Data file for', symbol, ' downloaded to ', full.path))
   # now un gzip the file
-  browser()
   new.path <- str_replace(full.path, '.gz', '')
   gunzip(filename=full.path, destname=new.path, overwrite=TRUE)
   return(new.path)
