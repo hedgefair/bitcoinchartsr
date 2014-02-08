@@ -3,6 +3,7 @@ library(XML)
 library(RCurl)
 library(stringr)
 library(lubridate)
+library(R.utils)
 
 # ----------------------------------------------------------------------------------------------
 # INTERNAL (PRIVATE) FUNCTIONS
@@ -383,7 +384,7 @@ download_daily_dump <- function(symbol,
                                 overwrite=FALSE, 
                                 debug=FALSE) 
 {
-  full.path <- paste(data.directory, '/', symbol, '-dump.csv', sep='')
+  full.path <- paste(data.directory, '/', symbol, '-dump.csv.gz', sep='')
   # make sure the directory exists
   if(!file.exists(data.directory)) {
     if(debug) message(paste0('Creating missing data directory ', data.directory))
@@ -398,10 +399,14 @@ download_daily_dump <- function(symbol,
       unlink(full.path)
     }
   }
-  url <- paste('http://api.bitcoincharts.com/v1/csv/', symbol, '.csv', sep='')
+  url <- paste('http://api.bitcoincharts.com/v1/csv/', symbol, '.csv.gz', sep='')
   download.file(url, destfile=full.path, method='auto', quiet=!debug, mode="w", cacheOK=TRUE, extra=getOption("download.file.extra"))
   if(debug) message(paste0('Data file for', symbol, ' downloaded to ', full.path))
-  return(full.path)
+  # now un gzip the file
+  browser()
+  new.path <- str_replace(full.path, '.gz', '')
+  gunzip(filename=full.path, destname=new.path, overwrite=TRUE)
+  return(new.path)
 }
 
 #' @title Download all available data
