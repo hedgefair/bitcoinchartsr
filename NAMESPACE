@@ -1,5 +1,6 @@
 export(load_all_data, 
        get_bitcoincharts_data, 
+       get_bitcoincharts_data_fast, 
        get_most_recent_trade, 
        get_symbol_listing, 
        download_all_daily_dumps, 

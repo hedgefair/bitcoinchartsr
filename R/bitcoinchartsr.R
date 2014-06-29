@@ -4,6 +4,7 @@ library(RCurl)
 library(stringr)
 library(lubridate)
 library(R.utils)
+library(data.table)
 
 ### TODO: Create a new version that uses data.table fread to load data and NWS to cache data
 ### This will reduce the need for the crazy file splitting gymnastics
@@ -89,6 +90,28 @@ prepare_historical_data <- function(symbol,
   dump.file
 }
 
+prepare_historical_data_fast <- function(symbol, 
+                                    data.directory, 
+                                    download.daily.dump, 
+                                    overwrite,
+                                    debug) 
+{
+  # now download the huge daily dump file
+  dump.file <- ''
+  dump.file <- paste(data.directory, '/', symbol, '-dump.csv', sep='')
+  if(download.daily.dump) {
+    if(debug) message(paste0('download.data=TRUE... ', dump.file, ', downloading now...')) 
+    dump.file <- download_daily_dump(symbol=symbol, data.directory=data.directory, overwrite=overwrite, debug=debug)  
+  } else {
+    if(!file.exists(dump.file)) {
+      # file is missing download it!
+      if(debug) message(paste0('Did not find dump file: ', dump.file, ', downloading now...')) 
+      dump.file <- download_daily_dump(symbol=symbol, data.directory=data.directory, overwrite=overwrite, debug=debug)  
+    }
+  }
+  dump.file
+}
+
 # =======================================================================================================
 # Download all historical trade data for a given symbol from bitcoincharts.com 
 # and split into 20000-line csv files. Then parse the files and return tick data for the specified
@@ -164,6 +187,20 @@ get_trade_data <- function(symbol,
 #       # }
 #     }
   }
+  return(tickdata)
+}
+
+get_trade_data_fast <- function(symbol, 
+                           start.date, 
+                           end.date='', 
+                           data.directory=file.path(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol)) 
+{
+  start.ts <- as.integer(as.POSIXct(as.Date(start.date), tz='UTC', origin='1970-01-01'))
+  end.ts <- as.integer(as.POSIXct(as.Date(end.date), tz='UTC', origin='1970-01-01'))  
+  fl <- file.path(data.directory, paste0(symbol, '-dump.csv'))
+  tickdata <- data.frame(fread(fl, header=FALSE, sep=',', colClasses=c('numeric','numeric','numeric')))
+  tickdata <- setNames(tickdata, c('timestamp','price','amount'))
+  tickdata <- tickdata[ (tickdata$timestamp >= start.ts) & (tickdata$timestamp <= end.ts), ]
   return(tickdata)
 }
 
@@ -304,11 +341,73 @@ get_bitcoincharts_data <- function(symbol,
   } else if(ohlc.frequency == 'years') {
     ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y", align, fill)  
   }
-  colnames(ohlc.data.xts) <- c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks')
+  ohlc.data.xts <- setNames(ohlc.data.xts, c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
   # OK now we have data up to a certain point, if our end date is today, get every last bit of data
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
     if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
     recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
+    if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+    # now add the most recent on to what we have obtained from the dump
+    ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ])
+  }
+  if(!auto.assign) {
+    # return to caller
+    return(ohlc.data.xts)  
+  } else {
+    # assign it a-la quantmod
+    assign(x=symbol, value=ohlc.data.xts, envir=env)
+    return(NULL)
+  }
+}
+
+get_bitcoincharts_data_fast <- function(symbol, 
+                                   start.date=as.character(Sys.Date() - lubridate::days(30)), 
+                                   end.date=as.character(Sys.Date() + lubridate::days(1)), 
+                                   ohlc.frequency = 'hours', 
+                                   align=TRUE,
+                                   fill=FALSE,
+                                   data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), 
+                                   download.data=FALSE, 
+                                   overwrite=FALSE, 
+                                   auto.assign=FALSE, 
+                                   env=.GlobalEnv,
+                                   debug=FALSE) 
+{
+  call <- match.call()
+  if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
+    stop("OHLC frequency must be one of following: seconds, minutes, hours, days, months, years")
+  }
+  if(!(str_detect(start.date, pattern='[0-9]{4}-[0-9]{2}-[0-9]{2}'))) {
+    stop("start.date must be in YYYY-MM-DD format")
+  }
+  if(!(str_detect(end.date, pattern='[0-9]{4}-[0-9]{2}-[0-9]{2}'))) {
+    stop("end.date must be in YYYY-MM-DD format")
+  }
+  prepare_historical_data_fast(symbol=symbol, data.directory=data.directory, download.daily.dump=download.data, overwrite=overwrite, debug) 
+  if(debug) message(paste('Getting tick data for: ', symbol, sep=''))
+  tickdata <- get_trade_data_fast(symbol=symbol, data.directory=data.directory, start.date=start.date, end.date=end.date)
+  if(ohlc.frequency == 'seconds') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M %S", align, fill)  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - seconds(1)
+  } else if(ohlc.frequency == 'minutes') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M", align, fill)
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - minutes(1)
+  } else if(ohlc.frequency == 'hours') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H", align, fill)  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - hours(1)
+  } else if(ohlc.frequency == 'days') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d", align, fill)  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - days(1)
+  } else if(ohlc.frequency == 'months') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m", align, fill)  
+  } else if(ohlc.frequency == 'years') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y", align, fill)  
+  }
+  ohlc.data.xts <- setNames(ohlc.data.xts, c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
+  # OK now we have data up to a certain point, if our end date is today, get every last bit of data
+  if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
+    if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
+    recent <- get_most_recent_ohlc_fast(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
     if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
     # now add the most recent on to what we have obtained from the dump
     ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ])
@@ -667,7 +766,51 @@ get_most_recent_ohlc <- function(symbol,
   } else if(ohlc.frequency == 'years') {
     ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y", align, fill)  
   }
-  colnames(ohlc.data.xts) <- c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks')
+  ohlc.data.xts <- setNames(ohlc.data.xts, c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
   unlink(new.full.path, force=TRUE)
+  return(ohlc.data.xts)
+}
+
+get_most_recent_ohlc_fast <- function(symbol, 
+                                 data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), 
+                                 ohlc.frequency='hours', 
+                                 align=TRUE,
+                                 fill=FALSE,
+                                 debug=FALSE) 
+{
+  call <- match.call()
+  if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
+    stop("OHLC frequency must be one of following: seconds, minutes, hours, days, months, years")
+  }
+  # make sure the directory exists
+  if(!file.exists(data.directory)) {
+    if(debug) message(paste0('Creating missing data directory ', data.directory))
+    dir.create(data.directory)
+  } 
+  url <- paste('http://api.bitcoincharts.com/v1/trades.csv?symbol=', symbol, sep='')
+  file.name <- paste0(symbol, '-recent.csv')
+  full.path <- file.path(data.directory, file.name)
+  download.file(url, destfile=full.path, method='auto', quiet = !debug, mode = "w", cacheOK = TRUE, extra = getOption("download.file.extra"))
+  tickdata <- fread(full.path, header=FALSE, sep=',', colClasses=c('numeric','numeric','numeric'))
+  tickdata <- setNames(tickdata, c('timestamp','price','amount'))
+  if(ohlc.frequency == 'seconds') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M %S", align, fill)  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - seconds(1)
+  } else if(ohlc.frequency == 'minutes') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H %M", align, fill)
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - minutes(1)
+  } else if(ohlc.frequency == 'hours') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d %H", align, fill)  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - hours(1)
+  } else if(ohlc.frequency == 'days') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m%d", align, fill)  
+    index(ohlc.data.xts) <- index(ohlc.data.xts) - days(1)
+  } else if(ohlc.frequency == 'months') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y%m", align, fill)  
+  } else if(ohlc.frequency == 'years') {
+    ohlc.data.xts <- to.ohlc.xts(as.POSIXct(as.numeric(tickdata$timestamp),tz='UTC',origin='1970-01-01'),as.numeric(tickdata$price),as.numeric(tickdata$amount),"%Y", align, fill)  
+  }
+  ohlc.data.xts <- setNames(ohlc.data.xts, c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
+  unlink(full.path, force=TRUE)
   return(ohlc.data.xts)
 }
