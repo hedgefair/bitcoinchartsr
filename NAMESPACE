@@ -1,2 +1,14 @@
-export(load_all_data, get_bitcoincharts_data, get_most_recent_trade, get_symbol_listing, download_all_daily_dumps, get_most_recent_ohlc, download_daily_dump)
+export(load_all_data, 
+       get_bitcoincharts_data, 
+       get_most_recent_trade, 
+       get_symbol_listing, 
+       download_all_daily_dumps, 
+       get_most_recent_ohlc, 
+       download_daily_dump,
+       get_exchange_info,
+       get_total_mined_coins,
+       get_current_difficulty,
+       get_total_network_hashing_power,
+       get_markets_snapshot,
+       get_all_time_trade_count)
 import(stringr, quantmod, XML, RCurl, stringr, lubridate, xts, zoo, R.utils)

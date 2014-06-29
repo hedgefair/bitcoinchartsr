@@ -5,6 +5,9 @@ library(stringr)
 library(lubridate)
 library(R.utils)
 
+### TODO: Create a new version that uses data.table fread to load data and NWS to cache data
+### This will reduce the need for the crazy file splitting gymnastics
+
 # ----------------------------------------------------------------------------------------------
 # INTERNAL (PRIVATE) FUNCTIONS
 # ----------------------------------------------------------------------------------------------
@@ -501,10 +504,11 @@ get_symbol_listing <- function(debug=FALSE)
   return(all.symbols)
 }
 
-#' @title Get detailed listing of all currently available exchanges
+#' @title Get detailed information for a specified exchange
 #'
 #' @description Get detailed listing of all currently available exchanges from http://bitcoincharts.com/markets
 #'
+#' @param symbol character. Exchange you wish to obtain info for
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @seealso \code{\link{http://bitcoincharts.com/markets}}
@@ -514,16 +518,48 @@ get_symbol_listing <- function(debug=FALSE)
 #' # Get all market symbols:
 #' get_exchange_info()
 #' }
-get_exchange_info <- function(debug=FALSE) 
+get_exchange_info <- function(symbol, debug=FALSE) 
 {
+  markets.url <- 'http://bitcoincharts.com/markets/'
+  markets.url <- paste0(markets.url, '/', symbol, '.html')
+  txt <- getURL(markets.url)
+  if(txt == '') return(NA)
+  xmltext <- htmlParse(txt, asText=TRUE)
+  labels <- xmlApply(xpathApply(xmltext, "//div//div//p//label"), xmlValue)
+  vals <- xmlApply(xpathApply(xmltext, "//div//div//p//span"), xmlValue)
+  return(cbind(labels, vals))
+}
+
+get_total_mined_coins <- function() {
   markets.url = 'http://bitcoincharts.com/markets/'
-  #   txt <- getURL(markets.url)
-  #   xmltext <- htmlParse(txt, asText=TRUE)
-  #   xmltable <- xpathApply(xmltext, "//table//tr//td")
-  #   
-  #   all.symbols <- sort(unname(unlist(lapply(xmltable, FUN=function(x) { xmlValue(x) }))))
-  #   all.symbols
-  stop('Not implemented!')
+  txt <- getURL(markets.url)
+  xmltext <- htmlParse(txt, asText=TRUE)
+  tbls <- readHTMLTable(xmltext)
+  return(tbls[[1]])
+}
+
+get_current_difficulty <- function() {
+  markets.url = 'http://bitcoincharts.com/markets/'
+  txt <- getURL(markets.url)
+  xmltext <- htmlParse(txt, asText=TRUE)
+  tbls <- readHTMLTable(xmltext)
+  return(tbls[[2]])
+}
+
+get_total_network_hashing_power <- function() {
+  markets.url = 'http://bitcoincharts.com/markets/'
+  txt <- getURL(markets.url)
+  xmltext <- htmlParse(txt, asText=TRUE)
+  tbls <- readHTMLTable(xmltext)
+  return(tbls[[3]])
+}
+
+get_markets_snapshot <- function() {
+  markets.url = 'http://bitcoincharts.com/markets/'
+  txt <- getURL(markets.url)
+  xmltext <- htmlParse(txt, asText=TRUE)
+  tbls <- readHTMLTable(xmltext)
+  return(tbls[[4]])
 }
 
 # =======================================================================================================
