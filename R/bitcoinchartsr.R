@@ -149,16 +149,17 @@ get_trade_data <- function(symbol,
   if(end.date == '') {
     end.ts <- as.integer(as.POSIXct(Sys.time() + days(1), tz='UTC', origin='1970-01-01'))  
   } else {
-    if(as.integer(tickdata[ nrow(tickdata), 'timestamp']) > end.ts) {
-      # required data is already present, now filter out stuff that exceeds specified end.date
-      tickdata <- tickdata[ tickdata$timestamp <= end.ts, ]  
-    } else {
-      # we need to work backwards until we get the required data 
-      # earliest.timestamp <- end.ts - 1
-      # while(earliest.timestamp > end.ts) {
-      #    earliest.timestamp <- get_ticker(symbol=symbol, end=earliest.timestamp, data.directory=data.directory)   
-      # }
-    }
+    end.ts <- as.integer(as.POSIXct(as.Date(end.date) + days(1), tz='UTC', origin='1970-01-01'))  
+#     if(as.integer(tickdata[ nrow(tickdata), 'timestamp']) > end.ts) {
+#       # required data is already present, now filter out stuff that exceeds specified end.date
+#       tickdata <- tickdata[ tickdata$timestamp <= end.ts, ]  
+#     } else {
+#       # we need to work backwards until we get the required data 
+#       # earliest.timestamp <- end.ts - 1
+#       # while(earliest.timestamp > end.ts) {
+#       #    earliest.timestamp <- get_ticker(symbol=symbol, end=earliest.timestamp, data.directory=data.directory)   
+#       # }
+#     }
   }
   return(tickdata)
 }
@@ -406,6 +407,29 @@ download_daily_dump <- function(symbol,
   new.path <- str_replace(full.path, '.gz', '')
   gunzip(filename=full.path, destname=new.path, overwrite=TRUE)
   return(new.path)
+}
+
+#' @title Get total number of trades ever executed on a given exchange
+#'
+#' @description Get total number of trades ever executed on a given exchange by counting lines in dump file
+#'
+#' @param symbol character. Symbol to get total trade count for
+#' @param base.data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @export
+#' @examples
+#' \dontrun{
+#' # Download all available market data in one fell swoop:
+#' download_all_daily_dumps()
+#' }
+get_all_time_trade_count <- function(symbol, 
+                                     base.data.directory=system.file('extdata', 
+                                                                     'market-data', 
+                                                                     mustWork=TRUE, 
+                                                                     package='bitcoinchartsr')) {
+  dir.name <- file.path(base.data.directory, symbol)
+  file.name <- file.path(dir.name, paste0(symbol, '-dump.csv'))
+  if(!file.exists(file.name)) download_daily_dump(symbol, overwrite = TRUE)
+  return(length(readLines(file.name)))
 }
 
 #' @title Download all available data
