@@ -12,4 +12,4 @@ export(load_all_data,
        get_total_network_hashing_power,
        get_markets_snapshot,
        get_all_time_trade_count)
-import(stringr, quantmod, XML, RCurl, stringr, lubridate, xts, zoo, R.utils)
+import(stringr, quantmod, XML, RCurl, stringr, lubridate, xts, zoo, R.utils, data.table)
