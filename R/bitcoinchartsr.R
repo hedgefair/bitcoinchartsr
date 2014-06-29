@@ -428,10 +428,11 @@ get_all_time_trade_count <- function(symbol,
                                      base.data.directory=system.file('extdata', 
                                                                      'market-data', 
                                                                      mustWork=TRUE, 
-                                                                     package='bitcoinchartsr')) {
+                                                                     package='bitcoinchartsr'),
+                                     debug = FALSE) {
   dir.name <- file.path(base.data.directory, symbol)
   file.name <- file.path(dir.name, paste0(symbol, '-dump.csv'))
-  if(!file.exists(file.name)) download_daily_dump(symbol, overwrite = TRUE)
+  if(!file.exists(file.name)) { download_daily_dump(symbol, overwrite = TRUE); if(debug) message(paste('Downloading data for', symbol)); }
   return(length(readLines(file.name)))
 }
 
