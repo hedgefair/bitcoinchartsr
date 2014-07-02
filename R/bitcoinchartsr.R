@@ -6,9 +6,6 @@ library(lubridate)
 library(R.utils)
 library(data.table)
 
-### TODO: Create a new version that uses data.table fread to load data and NWS to cache data
-### This will reduce the need for the crazy file splitting gymnastics
-
 # ----------------------------------------------------------------------------------------------
 # INTERNAL (PRIVATE) FUNCTIONS
 # ----------------------------------------------------------------------------------------------
@@ -17,6 +14,7 @@ library(data.table)
 # Download all historical trade data for a given symbol from bitcoincharts.com 
 # and split into 20000-line csv files
 # =======================================================================================================
+#' @title prepare_historical_data
 prepare_historical_data <- function(symbol, 
                                     data.directory, 
                                     download.daily.dump, 
@@ -275,9 +273,7 @@ to.ohlc.xts <- function(ttime,
 # ----------------------------------------------------------------------------------------------
 
 #' @title Query bitcoincharts.com API
-#'
 #' @description Query bitcoincharts.com API to obtain market data for bitcoin exchanges
-#'
 #' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
 #' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to 30 days prior to current date.
 #' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to current date + 1.
@@ -344,11 +340,12 @@ get_bitcoincharts_data <- function(symbol,
   ohlc.data.xts <- setNames(ohlc.data.xts, c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
   # OK now we have data up to a certain point, if our end date is today, get every last bit of data
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
-    if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
-    recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
-    if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
-    # now add the most recent on to what we have obtained from the dump
-    ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ])
+    try(expr = { if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
+      recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
+      if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+      # now add the most recent on to what we have obtained from the dump
+      ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
+    })
   }
   if(!auto.assign) {
     # return to caller
@@ -406,11 +403,12 @@ get_bitcoincharts_data_fast <- function(symbol,
   ohlc.data.xts <- setNames(ohlc.data.xts, c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
   # OK now we have data up to a certain point, if our end date is today, get every last bit of data
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
-    if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
-    recent <- get_most_recent_ohlc_fast(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
-    if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
-    # now add the most recent on to what we have obtained from the dump
-    ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ])
+    try(expr = { if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
+      recent <- get_most_recent_ohlc_fast(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
+      if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+      # now add the most recent on to what we have obtained from the dump
+      ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
+    })
   }
   if(!auto.assign) {
     # return to caller
@@ -423,9 +421,7 @@ get_bitcoincharts_data_fast <- function(symbol,
 }
 
 #' @title load data for all known symbols into the global environment
-#'
 #' @description load data for all known symbols into the global environment
-#'
 #' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to 30 days prior to current date.
 #' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to current date + 1.
 #' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
@@ -467,9 +463,7 @@ load_all_data <- function(start.date=as.character(Sys.Date() - days(30)),
 }
 
 #' @title Download single exchange data file from bitcoincharts.com API
-#'
 #' @description Download single exchange data file from bitcoincharts.com API
-#'
 #' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
 #' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata for the symbol specified directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
@@ -512,9 +506,7 @@ download_daily_dump <- function(symbol,
 }
 
 #' @title Get total number of trades ever executed on a given exchange
-#'
 #' @description Get total number of trades ever executed on a given exchange by counting lines in dump file
-#'
 #' @param symbol character. Symbol to get total trade count for
 #' @param base.data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
 #' @export
@@ -536,9 +528,9 @@ get_all_time_trade_count <- function(symbol,
 }
 
 #' @title Download all available data
-#'
+
 #' @description Download all available data for all markets in one fell swoop. Caution! Some exchange data files are > 500 MB!!!
-#'
+
 #' @param base.data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
 #' @param debug logical. Debugging flag.
@@ -576,9 +568,9 @@ download_all_daily_dumps <- function(base.data.directory=system.file('extdata', 
 }
 
 #' @title Get list of all currently available market symbols
-#'
+
 #' @description Get list of all currently available market symbols from http://bitcoincharts.com/markets
-#'
+
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @seealso \code{\link{http://bitcoincharts.com/markets}}
@@ -605,9 +597,9 @@ get_symbol_listing <- function(debug=FALSE)
 }
 
 #' @title Get detailed information for a specified exchange
-#'
+
 #' @description Get detailed listing of all currently available exchanges from http://bitcoincharts.com/markets
-#'
+
 #' @param symbol character. Exchange you wish to obtain info for
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
@@ -666,9 +658,9 @@ get_markets_snapshot <- function() {
 # Utility function which returns the last trade in the most recent daily dump file
 # =======================================================================================================
 #' @title Utility function which returns the most recent OHLC candle
-#'
+
 #' @description Utility function which returns the most recent OHLC candle from the bitcoincharts.com API
-#'
+
 #' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
 #' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
 #' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
@@ -698,9 +690,9 @@ get_most_recent_trade <- function(symbol,
 }
 
 #' @title Get OHLC for last 2000 trades 
-#'
+
 #' @description Utility function which returns the most recent OHLC candle from the bitcoincharts.com API
-#'
+
 #' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
 #' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
 #' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years}
