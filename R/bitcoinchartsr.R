@@ -1,20 +1,23 @@
-library(quantmod)
-library(XML)
-library(RCurl)
-library(stringr)
-library(lubridate)
-library(R.utils)
-library(data.table)
+# library(quantmod)
+# library(XML)
+# library(RCurl)
+# library(stringr)
+# library(lubridate)
+# library(R.utils)
+# library(data.table)
 
 # ----------------------------------------------------------------------------------------------
 # INTERNAL (PRIVATE) FUNCTIONS
 # ----------------------------------------------------------------------------------------------
 
-# =======================================================================================================
-# Download all historical trade data for a given symbol from bitcoincharts.com 
-# and split into 20000-line csv files
-# =======================================================================================================
 #' @title prepare_historical_data
+#' @description Download all historical trade data for a given symbol from bitcoincharts.com and 
+#' split into 20000-line csv files
+#' @param symbol
+#' @param data.directory
+#' @param download.daily.dump
+#' @param overwrite
+#' @param debug
 prepare_historical_data <- function(symbol, 
                                     data.directory, 
                                     download.daily.dump, 
@@ -88,6 +91,13 @@ prepare_historical_data <- function(symbol,
   dump.file
 }
 
+#' @title prepare_historical_data_fast
+#' @description Download all historical trade data for a given symbol from bitcoincharts.com
+#' @param symbol
+#' @param data.directory
+#' @param download.daily.dump
+#' @param overwrite
+#' @param debug
 prepare_historical_data_fast <- function(symbol, 
                                     data.directory, 
                                     download.daily.dump, 
@@ -110,13 +120,17 @@ prepare_historical_data_fast <- function(symbol,
   dump.file
 }
 
-# =======================================================================================================
-# Download all historical trade data for a given symbol from bitcoincharts.com 
-# and split into 20000-line csv files. Then parse the files and return tick data for the specified
+#' @title get_trade_data
+#' @description Download all historical trade data for a given symbol from bitcoincharts.com 
+#' and split into 20000-line csv files. Then parse the files and return tick data for the specified
 # time period
-# =======================================================================================================
+#' @param symbol
+#' @param start.date
+#' @param end.date
+#' @param data.directory
 get_trade_data <- function(symbol, 
-                           start.date, end.date='', 
+                           start.date, 
+                           end.date='', 
                            data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/')) 
 {
   start.ts <- as.integer(as.POSIXct(as.Date(start.date), tz='UTC', origin='1970-01-01'))
@@ -188,6 +202,13 @@ get_trade_data <- function(symbol,
   return(tickdata)
 }
 
+#' @title get_trade_data
+#' @description Download all historical trade data for a given symbol from bitcoincharts.com. Then parse the files and return tick data for 
+#' the specified time period
+#' @param symbol
+#' @param start.date
+#' @param end.date
+#' @param data.directory
 get_trade_data_fast <- function(symbol, 
                            start.date, 
                            end.date='', 
@@ -202,13 +223,15 @@ get_trade_data_fast <- function(symbol,
   return(tickdata)
 }
 
-# ==============================================================================================
-# function which converts raw tick data to xts onject with OHLC
-# possible formats include: "%Y%m%d %H %M %S" (seconds), 
-# "%Y%m%d %H %M" (minutes), "%Y%m%d %H" (hours), "%Y%m%d" (daily)
-# align whether or not to align time series
-# fill whether or nto to fill in missing values so you have a regularly spaced time series
-# ==============================================================================================
+#' @title to.ohlc.xts
+#' @description function which converts raw tick data to xts onject with OHLC
+#' fill whether or nto to fill in missing values so you have a regularly spaced time series
+#' @param ttime
+#' @param tprice
+#' @param tvolume
+#' @param fmt character. Possible formats include: "%Y%m%d %H %M %S" (seconds), "%Y%m%d %H %M" (minutes), "%Y%m%d %H" (hours), "%Y%m%d" (daily)
+#' @param align logical. Whether or not to align time series with align.time
+#' @param fill logical. Whether or not to impute values for missing time periods.
 to.ohlc.xts <- function(ttime, 
                         tprice, 
                         tvolume, 
@@ -357,6 +380,27 @@ get_bitcoincharts_data <- function(symbol,
   }
 }
 
+#' @title Query bitcoincharts.com API using data.table methods instead of direct file manipulations
+#' @description Query bitcoincharts.com API to obtain market data for bitcoin exchanges
+#' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
+#' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to 30 days prior to current date.
+#' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to current date + 1.
+#' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
+#' @param align logical. Align time series index.
+#' @param fill logical. Fill missing values.
+#' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @param download.data logical. Whether to download a fresh copy of the data file.
+#' @param overwrite logical. Whether to overwrite the local copy of the data file.
+#' @param auto.assign logical. Whether or not to auto-assign the variable to the environment specified in the \code{env} param
+#' @param env character. Environment to auto.assign the return value to. Defaults to .GlobalEnv
+#' @param debug logical. Debugging flag.
+#' @references \url{http://bitcoincharts.com/about/markets-api/}
+#' @export
+#' @examples
+#' \dontrun{
+#' # Get one month of hourly market data for virtexCAD:
+#' get_bitcoincharts_data('virtexCAD')
+#' }
 get_bitcoincharts_data_fast <- function(symbol, 
                                    start.date=as.character(Sys.Date() - lubridate::days(30)), 
                                    end.date=as.character(Sys.Date() + lubridate::days(1)), 
@@ -528,9 +572,7 @@ get_all_time_trade_count <- function(symbol,
 }
 
 #' @title Download all available data
-
 #' @description Download all available data for all markets in one fell swoop. Caution! Some exchange data files are > 500 MB!!!
-
 #' @param base.data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
 #' @param debug logical. Debugging flag.
@@ -568,9 +610,7 @@ download_all_daily_dumps <- function(base.data.directory=system.file('extdata', 
 }
 
 #' @title Get list of all currently available market symbols
-
 #' @description Get list of all currently available market symbols from http://bitcoincharts.com/markets
-
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @seealso \code{\link{http://bitcoincharts.com/markets}}
@@ -597,9 +637,7 @@ get_symbol_listing <- function(debug=FALSE)
 }
 
 #' @title Get detailed information for a specified exchange
-
 #' @description Get detailed listing of all currently available exchanges from http://bitcoincharts.com/markets
-
 #' @param symbol character. Exchange you wish to obtain info for
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
@@ -622,6 +660,15 @@ get_exchange_info <- function(symbol, debug=FALSE)
   return(cbind(labels, vals))
 }
 
+#' @title Get total mined coins from site header table
+#' @description 
+#' @references \url{http://bitcoincharts.com}
+#' @export
+#' @examples
+#' \dontrun{
+#' # Get all market symbols:
+#' get_total_mined_coins()
+#' }
 get_total_mined_coins <- function() {
   markets.url = 'http://bitcoincharts.com/markets/'
   txt <- getURL(markets.url)
@@ -630,6 +677,15 @@ get_total_mined_coins <- function() {
   return(tbls[[1]])
 }
 
+#' @title Get current network difficulty from site header
+#' @description 
+#' @references \url{http://bitcoincharts.com}
+#' @export
+#' @examples
+#' \dontrun{
+#' # Get all market symbols:
+#' get_current_difficulty()
+#' }
 get_current_difficulty <- function() {
   markets.url = 'http://bitcoincharts.com/markets/'
   txt <- getURL(markets.url)
@@ -638,6 +694,15 @@ get_current_difficulty <- function() {
   return(tbls[[2]])
 }
 
+#' @title Get total network hashing power from site header
+#' @description 
+#' @references \url{http://bitcoincharts.com}
+#' @export
+#' @examples
+#' \dontrun{
+#' # Get all market symbols:
+#' get_total_network_hashing_power()
+#' }
 get_total_network_hashing_power <- function() {
   markets.url = 'http://bitcoincharts.com/markets/'
   txt <- getURL(markets.url)
@@ -646,6 +711,15 @@ get_total_network_hashing_power <- function() {
   return(tbls[[3]])
 }
 
+#' @title Get snapshots of all markets listed on the site
+#' @description 
+#' @references \url{http://bitcoincharts.com}
+#' @export
+#' @examples
+#' \dontrun{
+#' # Get all market symbols:
+#' get_markets_snapshot()
+#' }
 get_markets_snapshot <- function() {
   markets.url = 'http://bitcoincharts.com/markets/'
   txt <- getURL(markets.url)
@@ -654,13 +728,8 @@ get_markets_snapshot <- function() {
   return(tbls[[4]])
 }
 
-# =======================================================================================================
-# Utility function which returns the last trade in the most recent daily dump file
-# =======================================================================================================
 #' @title Utility function which returns the most recent OHLC candle
-
 #' @description Utility function which returns the most recent OHLC candle from the bitcoincharts.com API
-
 #' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
 #' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
 #' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
@@ -690,9 +759,7 @@ get_most_recent_trade <- function(symbol,
 }
 
 #' @title Get OHLC for last 2000 trades 
-
 #' @description Utility function which returns the most recent OHLC candle from the bitcoincharts.com API
-
 #' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
 #' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
 #' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years}
@@ -763,6 +830,22 @@ get_most_recent_ohlc <- function(symbol,
   return(ohlc.data.xts)
 }
 
+#' @title Get OHLC for last 2000 trades using data.table functions instead of direct file manipulation
+#' @description Utility function which returns the most recent OHLC candle from the bitcoincharts.com API
+#' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
+#' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years}
+#' @param align logical. Align time series index.
+#' @param fill logical. Fill missing values. 
+#' @param debug logical. Debugging flag.
+#' @references \url{http://bitcoincharts.com/about/markets-api/}
+#' @seealso \code{\link{http://api.bitcoincharts.com/v1/trades.csv?symbol=SYMBOL[&end=UNIXTIME]}}
+#' @export
+#' @examples
+#' \dontrun{
+#' # Get most recent 1-day candle from cavirtex.com:
+#' get_most_recent_trade('virtexCAD', ohlc.frequency='days')
+#' }
 get_most_recent_ohlc_fast <- function(symbol, 
                                  data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), 
                                  ohlc.frequency='hours', 
