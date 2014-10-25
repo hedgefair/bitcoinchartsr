@@ -725,7 +725,41 @@ get_markets_snapshot <- function() {
   txt <- getURL(markets.url)
   xmltext <- htmlParse(txt, asText=TRUE)
   tbls <- readHTMLTable(xmltext)
-  return(tbls[[4]])
+  tbl <- tbls[[4]]
+  tbl <- apply(tbl, 2, str_trim)
+  tbl <- apply(tbl, 2, str_replace_all, '\n|\t', ' ')
+  tbl <- apply(tbl, 2, str_replace_all, ' {2,}', ' ')  
+  tbl <- data.frame(tbl, stringsAsFactors = FALSE)
+  symbol <- sapply(str_split(tbl$Symbol, ' '), last)
+  name <- sapply(sapply(str_split(tbl$Symbol, ' '), 
+                        function(x) x[ 1:(length(x) - 1) ]), paste0, collapse = ' ')
+  last.price <- sapply(str_split(tbl$Latest.Price, ' '), '[', 1)
+  last.price.time <- sapply(sapply(str_split(tbl$Latest.Price, ' '), 
+                                   function(x) x[ 2:length(x) ]), paste0, collapse = ' ')
+  avgs.30.day <- data.frame(matrix(unlist(str_split(tbl$Average, ' ')), 
+                                   ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+  vols.30.day <- data.frame(matrix(unlist(str_split(tbl$Volume, ' ')), 
+                                   ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+  low.high.30.day <- data.frame(matrix(unlist(str_split(tbl$Low.High, ' ')), 
+                                       ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)
+  avgs.24.hr <- data.frame(matrix(unlist(str_split(str_replace(tbl$X24h.Avg., '^—$', 'NA NA NA'), ' ')), 
+                                  ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+  vols.24.hr <- data.frame(matrix(unlist(str_split(tbl$Volume.1, ' ')), 
+                                  ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+  low.high.24.hr <- data.frame(matrix(unlist(str_split(tbl$Low.High.1, ' ')), 
+                                      ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)  
+  tbl <- cbind(change = tbl$V1, symbol, name, last.price, last.price.time, avgs.30.day,
+               tbl$Bid, tbl$Ask, vols.30.day, low.high.30.day, avgs.24.hr, vols.24.hr, 
+               low.high.24.hr)
+  tbl <- setNames(tbl, c('change', 'symbol', 'name', 'last.price', 'last.price.when', 
+                         'price.30.day', 'price.30.day.change', 'price.30.day.percentage.change',
+                         'bid', 'ask', 
+                         'vol.30.day', 'vol.30.day.change', 'vol.30.day.currency',
+                         'low.30.day', 'high.30.day', 
+                         'price.24.hr', 'price.24.hr.change', 'price.24.hr.percentage.change',
+                         'vol.24.hr', 'vol.24.hr.change', 'vol.24.hr.currency',
+                         'low.24.hr', 'high.24.hr'))
+  return(tbl)
 }
 
 #' @title Utility function which returns the most recent OHLC candle
