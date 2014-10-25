@@ -1,10 +1,11 @@
-# library(quantmod)
-# library(XML)
-# library(RCurl)
-# library(stringr)
-# library(lubridate)
-# library(R.utils)
-# library(data.table)
+library(quantmod)
+library(XML)
+library(RCurl)
+library(stringr)
+library(lubridate)
+library(R.utils)
+library(data.table)
+options(scipen = 500)
 
 # ----------------------------------------------------------------------------------------------
 # INTERNAL (PRIVATE) FUNCTIONS
@@ -99,10 +100,10 @@ prepare_historical_data <- function(symbol,
 #' @param overwrite
 #' @param debug
 prepare_historical_data_fast <- function(symbol, 
-                                    data.directory, 
-                                    download.daily.dump, 
-                                    overwrite,
-                                    debug) 
+                                         data.directory, 
+                                         download.daily.dump, 
+                                         overwrite,
+                                         debug) 
 {
   # now download the huge daily dump file
   dump.file <- ''
@@ -188,16 +189,16 @@ get_trade_data <- function(symbol,
     end.ts <- as.integer(as.POSIXct(Sys.time() + days(1), tz='UTC', origin='1970-01-01'))  
   } else {
     end.ts <- as.integer(as.POSIXct(as.Date(end.date) + days(1), tz='UTC', origin='1970-01-01'))  
-#     if(as.integer(tickdata[ nrow(tickdata), 'timestamp']) > end.ts) {
-#       # required data is already present, now filter out stuff that exceeds specified end.date
-#       tickdata <- tickdata[ tickdata$timestamp <= end.ts, ]  
-#     } else {
-#       # we need to work backwards until we get the required data 
-#       # earliest.timestamp <- end.ts - 1
-#       # while(earliest.timestamp > end.ts) {
-#       #    earliest.timestamp <- get_ticker(symbol=symbol, end=earliest.timestamp, data.directory=data.directory)   
-#       # }
-#     }
+    #     if(as.integer(tickdata[ nrow(tickdata), 'timestamp']) > end.ts) {
+    #       # required data is already present, now filter out stuff that exceeds specified end.date
+    #       tickdata <- tickdata[ tickdata$timestamp <= end.ts, ]  
+    #     } else {
+    #       # we need to work backwards until we get the required data 
+    #       # earliest.timestamp <- end.ts - 1
+    #       # while(earliest.timestamp > end.ts) {
+    #       #    earliest.timestamp <- get_ticker(symbol=symbol, end=earliest.timestamp, data.directory=data.directory)   
+    #       # }
+    #     }
   }
   return(tickdata)
 }
@@ -210,9 +211,9 @@ get_trade_data <- function(symbol,
 #' @param end.date
 #' @param data.directory
 get_trade_data_fast <- function(symbol, 
-                           start.date, 
-                           end.date='', 
-                           data.directory=file.path(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol)) 
+                                start.date, 
+                                end.date='', 
+                                data.directory=file.path(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol)) 
 {
   start.ts <- as.integer(as.POSIXct(as.Date(start.date), tz='UTC', origin='1970-01-01'))
   end.ts <- as.integer(as.POSIXct(as.Date(end.date), tz='UTC', origin='1970-01-01'))  
@@ -287,7 +288,7 @@ to.ohlc.xts <- function(ttime,
     ohlc.xts[ ,'Close' ] <- na.locf(ohlc.xts$Close)
     ohlc.xts[ missing.vals, c('Open', 'High', 'Low')] <- ohlc.xts[ missing.vals, 'Close']  
   }
-#   ohlc.xts[1:(nrow(ohlc.xts) - 1), ]
+  #   ohlc.xts[1:(nrow(ohlc.xts) - 1), ]
   ohlc.xts
 }
 
@@ -364,10 +365,10 @@ get_bitcoincharts_data <- function(symbol,
   # OK now we have data up to a certain point, if our end date is today, get every last bit of data
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
     try(expr = { if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
-      recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
-      if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
-      # now add the most recent on to what we have obtained from the dump
-      ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
+                 recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
+                 if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+                 # now add the most recent on to what we have obtained from the dump
+                 ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
     })
   }
   if(!auto.assign) {
@@ -402,17 +403,17 @@ get_bitcoincharts_data <- function(symbol,
 #' get_bitcoincharts_data('virtexCAD')
 #' }
 get_bitcoincharts_data_fast <- function(symbol, 
-                                   start.date=as.character(Sys.Date() - lubridate::days(30)), 
-                                   end.date=as.character(Sys.Date() + lubridate::days(1)), 
-                                   ohlc.frequency = 'hours', 
-                                   align=TRUE,
-                                   fill=FALSE,
-                                   data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), 
-                                   download.data=FALSE, 
-                                   overwrite=FALSE, 
-                                   auto.assign=FALSE, 
-                                   env=.GlobalEnv,
-                                   debug=FALSE) 
+                                        start.date=as.character(Sys.Date() - lubridate::days(30)), 
+                                        end.date=as.character(Sys.Date() + lubridate::days(1)), 
+                                        ohlc.frequency = 'hours', 
+                                        align=TRUE,
+                                        fill=FALSE,
+                                        data.directory=paste(system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), symbol, sep='/'), 
+                                        download.data=FALSE, 
+                                        overwrite=FALSE, 
+                                        auto.assign=FALSE, 
+                                        env=.GlobalEnv,
+                                        debug=FALSE) 
 {
   call <- match.call()
   if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
@@ -448,10 +449,10 @@ get_bitcoincharts_data_fast <- function(symbol,
   # OK now we have data up to a certain point, if our end date is today, get every last bit of data
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
     try(expr = { if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
-      recent <- get_most_recent_ohlc_fast(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
-      if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
-      # now add the most recent on to what we have obtained from the dump
-      ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
+                 recent <- get_most_recent_ohlc_fast(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
+                 if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+                 # now add the most recent on to what we have obtained from the dump
+                 ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
     })
   }
   if(!auto.assign) {
@@ -722,9 +723,7 @@ get_total_network_hashing_power <- function() {
 #' }
 get_markets_snapshot <- function() {
   markets.url = 'http://bitcoincharts.com/markets/'
-  txt <- getURL(markets.url)
-  xmltext <- htmlParse(txt, asText=TRUE)
-  tbls <- readHTMLTable(xmltext)
+  tbls <- readHTMLTable(markets.url)
   tbl <- tbls[[4]]
   tbl <- apply(tbl, 2, str_trim)
   tbl <- apply(tbl, 2, str_replace_all, '\n|\t', ' ')
@@ -762,6 +761,28 @@ get_markets_snapshot <- function() {
                          'price.24.hr', 'price.24.hr.change', 'price.24.hr.change.percent',
                          'vol.24.hr.btc', 'vol.24.hr.fiat', 'vol.24.hr.currency',
                          'low.24.hr', 'high.24.hr'))
+  tbl <- transform(tbl, 
+            last.price = as.numeric(last.price),
+            price.30.day = as.numeric(price.30.day),
+            price.30.day.change = as.numeric(price.30.day.change),
+            price.30.day.change.percent = as.numeric(price.30.day.change.percent),
+            bid = as.numeric(bid),
+            ask = as.numeric(ask),
+            vol.30.day.btc = as.numeric(vol.30.day.btc), 
+            vol.30.day.fiat = as.numeric(vol.30.day.fiat), 
+            vol.30.day.currency = factor(vol.30.day.currency),
+            low.30.day = as.numeric(low.30.day), 
+            high.30.day = as.numeric(high.30.day), 
+            price.24.hr = as.numeric(price.24.hr), 
+            price.24.hr.change = as.numeric(price.24.hr.change), 
+            price.24.hr.change.percent = as.numeric(price.24.hr.change.percent),
+            vol.24.hr.btc = as.numeric(vol.24.hr.btc), 
+            vol.24.hr.fiat = as.numeric(vol.24.hr.fiat), 
+            vol.24.hr.currency = factor(vol.24.hr.currency),
+            low.24.hr = as.numeric(low.24.hr), 
+            high.24.hr = as.numeric(high.24.hr))
+  tbl$fiat.currency <- tbl$vol.30.day.currency
+  tbl <- tbl[ ,setdiff(colnames(tbl), c('vol.24.hr.currency', 'vol.30.day.currency')) ]
   return(tbl)
 }
 
@@ -884,11 +905,11 @@ get_most_recent_ohlc <- function(symbol,
 #' get_most_recent_trade('virtexCAD', ohlc.frequency='days')
 #' }
 get_most_recent_ohlc_fast <- function(symbol, 
-                                 data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), 
-                                 ohlc.frequency='hours', 
-                                 align=TRUE,
-                                 fill=FALSE,
-                                 debug=FALSE) 
+                                      data.directory=system.file('extdata', 'market-data', mustWork=TRUE, package='bitcoinchartsr'), 
+                                      ohlc.frequency='hours', 
+                                      align=TRUE,
+                                      fill=FALSE,
+                                      debug=FALSE) 
 {
   call <- match.call()
   if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
