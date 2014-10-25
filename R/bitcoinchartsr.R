@@ -752,14 +752,15 @@ get_markets_snapshot <- function() {
                tbl$Bid, tbl$Ask, vols.30.day, low.high.30.day, avgs.24.hr, vols.24.hr, 
                low.high.24.hr)
   tbl <- apply(tbl, 2, str_replace_all, ',|%', '')
+  tbl <- apply(tbl, 2, str_replace_all, '—', NA)
   tbl <- data.frame(tbl, stringsAsFactors = FALSE)
   tbl <- setNames(tbl, c('change', 'symbol', 'name', 'last.price', 'last.price.when', 
                          'price.30.day', 'price.30.day.change', 'price.30.day.change.percent',
                          'bid', 'ask', 
-                         'vol.30.day', 'vol.30.day.change', 'vol.30.day.currency',
+                         'vol.30.day.btc', 'vol.30.day.fiat', 'vol.30.day.currency',
                          'low.30.day', 'high.30.day', 
                          'price.24.hr', 'price.24.hr.change', 'price.24.hr.change.percent',
-                         'vol.24.hr', 'vol.24.hr.change', 'vol.24.hr.currency',
+                         'vol.24.hr.btc', 'vol.24.hr.fiat', 'vol.24.hr.currency',
                          'low.24.hr', 'high.24.hr'))
   return(tbl)
 }
