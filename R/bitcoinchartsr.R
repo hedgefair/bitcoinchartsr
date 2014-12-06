@@ -5,6 +5,7 @@ library(stringr)
 library(lubridate)
 library(R.utils)
 library(data.table)
+library(xts)
 options(scipen = 500)
 
 # ----------------------------------------------------------------------------------------------
@@ -366,9 +367,9 @@ get_bitcoincharts_data <- function(symbol,
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
     try(expr = { if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
                  recent <- get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
-                 if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+                 if(first(index(recent)) > xts::last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
                  # now add the most recent on to what we have obtained from the dump
-                 ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
+                 ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > xts::last(index(ohlc.data.xts)), ]) 
     })
   }
   if(!auto.assign) {
@@ -450,9 +451,9 @@ get_bitcoincharts_data_fast <- function(symbol,
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
     try(expr = { if(debug) message(paste('Getting most recent data for: ', symbol, sep=''))
                  recent <- get_most_recent_ohlc_fast(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug)
-                 if(first(index(recent)) > last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
+                 if(first(index(recent)) > xts::last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data=TRUE and overwrite=TRUE')
                  # now add the most recent on to what we have obtained from the dump
-                 ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > last(index(ohlc.data.xts)), ]) 
+                 ohlc.data.xts <- rbind(ohlc.data.xts, recent[ index(recent) > xts::last(index(ohlc.data.xts)), ]) 
     })
   }
   if(!auto.assign) {
@@ -815,7 +816,7 @@ get_most_recent_trade <- function(symbol,
   if(!(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))) {
     stop("OHLC frequency must be one of following: seconds, minutes, hours, days, months, years")
   }
-  last(get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug))
+  xts::last(get_most_recent_ohlc(symbol=symbol, data.directory=data.directory, ohlc.frequency=ohlc.frequency, align=align, fill=fill, debug=debug))
 }
 
 #' @title Get OHLC for last 2000 trades 
