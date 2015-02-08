@@ -1,17 +1,9 @@
-# library(quantmod)
-# library(XML)
-# library(RCurl)
-# library(stringr)
-# library(lubridate)
-# library(R.utils)
-# library(data.table)
-# library(xts)
-# options(scipen = 500)
-
 #' @title Download single exchange data file from bitcoincharts.com API
 #' @description Download single exchange data file from bitcoincharts.com API
-#' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
-#' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata for the symbol specified directory.
+#' @param symbol character. Supported exchanges can be obtained by calling the 
+#' \code{'get_symbol_listing()'} method.
+#' @param data.directory character. Destination directory for downloaded data files. 
+#' Defaults to package install extdata/marketdata for the symbol specified directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
