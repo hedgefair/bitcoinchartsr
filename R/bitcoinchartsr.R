@@ -57,8 +57,10 @@ download_daily_dump <- function(symbol,
 }
 
 #' @title Download all available data
-#' @description Download all available data for all markets in one fell swoop. Caution! Some exchange data files are > 500 MB!!!
-#' @param base.data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @description Download all available data for all markets in one fell swoop. 
+#' Caution! Some exchange data files are > 500 MB!!!
+#' @param base.data.directory character. Destination directory for downloaded 
+#' data files. Defaults to package install extdata/marketdata directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
@@ -108,7 +110,8 @@ download_all_daily_dumps <- function(base.data.directory = system.file('extdata'
 #' @param start.date
 #' @param end.date
 #' @param data.directory
-#' @import lubridate data.table
+#' @import lubridate 
+#' @importFrom data.table fread
 get_trade_data <- function(symbol, 
                            start.date = as.character(as.Date(now() - days(30))), 
                            end.date = as.character(as.Date(now())), 
@@ -139,14 +142,16 @@ get_trade_data <- function(symbol,
 
 #' @title to.ohlc.xts
 #' @description function which converts raw tick data to xts onject with OHLC
-#' fill whether or nto to fill in missing values so you have a regularly spaced time series
+#' fill whether or nto to fill in missing values so you have a regularly spaced 
+#' time series
 #' @param ttime
 #' @param tprice
 #' @param tvolume
-#' @param fmt character. Possible formats include: "%Y%m%d %H %M %S" (seconds), "%Y%m%d %H %M" (minutes), "%Y%m%d %H" (hours), "%Y%m%d" (daily)
+#' @param fmt character. Possible formats include: "%Y%m%d %H %M %S" (seconds), 
+#' "%Y%m%d %H %M" (minutes), "%Y%m%d %H" (hours), "%Y%m%d" (daily)
 #' @param align logical. Whether or not to align time series with align.time
 #' @param fill logical. Whether or not to impute values for missing time periods.
-#' @import xts
+#' @import xts zoo
 to.ohlc.xts <- function(ttime, 
                         tprice, 
                         tvolume, 
@@ -206,17 +211,25 @@ to.ohlc.xts <- function(ttime,
 
 #' @title Query bitcoincharts.com API
 #' @description Query bitcoincharts.com API to obtain market data for bitcoin exchanges
-#' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
-#' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to 30 days prior to current date.
-#' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to current date + 1.
-#' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
+#' @param symbol character. Supported exchanges can be obtained by calling the 
+#' \code{'get_symbol_listing()'} method.
+#' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format 
+#' representing the start of the requested data series. Defaults to 30 days prior 
+#' to current date.
+#' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format 
+#' representing the start of the requested data series. Defaults to current date + 1.
+#' @param ohlc.frequency character. Supported values are \code{seconds}, 
+#' \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
 #' @param align logical. Align time series index.
 #' @param fill logical. Fill missing values.
-#' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @param data.directory character. Destination directory for downloaded data 
+#' files. Defaults to package install extdata/marketdata directory.
 #' @param download.data logical. Whether to download a fresh copy of the data file.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
-#' @param auto.assign logical. Whether or not to auto-assign the variable to the environment specified in the \code{env} param
-#' @param env character. Environment to auto.assign the return value to. Defaults to .GlobalEnv
+#' @param auto.assign logical. Whether or not to auto-assign the variable to the 
+#' environment specified in the \code{env} param
+#' @param env character. Environment to auto.assign the return value to. 
+#' Defaults to .GlobalEnv
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @export
@@ -225,7 +238,7 @@ to.ohlc.xts <- function(ttime,
 #' # Get one month of hourly market data for virtexCAD:
 #' get_bitcoincharts_data('virtexCAD')
 #' }
-#' @import lubridate stringr xts
+#' @import lubridate stringr xts zoo
 get_bitcoincharts_data <- function(symbol, 
                                    start.date = as.character(as.Date(now() - days(30))), 
                                    end.date = as.character(as.Date(now() + days(1))), 
@@ -319,9 +332,13 @@ get_bitcoincharts_data <- function(symbol,
   if(as.Date(end.date) >= Sys.Date() & (ohlc.frequency %in% c('seconds', 'minutes', 'hours'))) {
     try(expr = { 
       if(debug) message(paste0('Getting most recent data for: ', symbol))
-      recent <- get_most_recent_ohlc(symbol = symbol, data.directory = data.directory, 
-                                     ohlc.frequency = ohlc.frequency, align = align, 
-                                     fill = fill, debug = debug)
+      recent <- get_most_recent_ohlc(symbol = symbol, 
+                                     start.date = as.character(as.Date(last(index(ohlc.data.xts)))),
+                                     data.directory = data.directory, 
+                                     ohlc.frequency = ohlc.frequency, 
+                                     align = align, 
+                                     fill = fill, 
+                                     debug = debug)
       if(first(index(recent)) > xts::last(index(ohlc.data.xts))) stop('There is a gap in the data, please rerun this function with download.data = TRUE and overwrite = TRUE')
       # now add the most recent on to what we have obtained from the dump
       ohlc.data.xts <- rbind(ohlc.data.xts, 
@@ -343,10 +360,14 @@ get_bitcoincharts_data <- function(symbol,
 }
 
 #' @title Utility function which returns the most recent OHLC candle
-#' @description Utility function which returns the most recent OHLC candle from the bitcoincharts.com API
-#' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
-#' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
-#' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @description Utility function which returns the most recent OHLC candle from 
+#' the bitcoincharts.com API
+#' @param symbol character. Supported exchanges can be obtained by calling the 
+#' \code{'get_symbol_listing()'} method.
+#' @param ohlc.frequency character. Supported values are \code{seconds}, 
+#' \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
+#' @param data.directory character. Destination directory for downloaded data 
+#' files. Defaults to package install extdata/marketdata directory.
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @seealso \code{\link{http://bitcoincharts.com/markets}}
@@ -356,6 +377,7 @@ get_bitcoincharts_data <- function(symbol,
 #' # Get most recent 1-day candle from cavirtex.com:
 #' get_most_recent_trade('virtexCAD', ohlc.frequency='days')
 #' }
+#' @import xts zoo 
 get_most_recent_trade <- function(symbol, 
                                   ohlc.frequency = 'hours',
                                   align = TRUE,
@@ -375,10 +397,14 @@ get_most_recent_trade <- function(symbol,
 }
 
 #' @title Get OHLC for last two days of trades via API
-#' @description Utility function which returns the most recent OHLC candle from the bitcoincharts.com API
-#' @param symbol character. Supported exchanges can be obtained by calling the \code{'get_symbol_listing()'} method.
-#' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
-#' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years}
+#' @description Utility function which returns the most recent OHLC candle from 
+#' the bitcoincharts.com API
+#' @param symbol character. Supported exchanges can be obtained by calling the 
+#' \code{'get_symbol_listing()'} method.
+#' @param data.directory character. Destination directory for downloaded data 
+#' files. Defaults to package install extdata/marketdata directory.
+#' @param ohlc.frequency character. Supported values are \code{seconds}, 
+#' \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years}
 #' @param align logical. Align time series index.
 #' @param fill logical. Fill missing values. 
 #' @param debug logical. Debugging flag.
@@ -390,6 +416,7 @@ get_most_recent_trade <- function(symbol,
 #' # Get most recent 1-day candle from cavirtex.com:
 #' get_most_recent_trade('virtexCAD', ohlc.frequency='days')
 #' }
+#' @import lubridate zoo xts
 get_most_recent_ohlc <- function(symbol, 
                                  start.date = as.character(as.Date(now() - days(2))),
                                  data.directory = system.file('extdata', 
@@ -488,24 +515,31 @@ get_most_recent_ohlc <- function(symbol,
 
 #' @title load data for all known symbols into the global environment
 #' @description load data for all known symbols into the global environment
-#' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to 30 days prior to current date.
-#' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format representing the start of the requested data series. Defaults to current date + 1.
-#' @param ohlc.frequency character. Supported values are \code{seconds}, \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
+#' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format 
+#' representing the start of the requested data series. Defaults to 30 days prior 
+#' to current date.
+#' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format 
+#' representing the start of the requested data series. Defaults to current date + 1.
+#' @param ohlc.frequency character. Supported values are \code{seconds}, 
+#' \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years} 
 #' @param align logical. Align time series index.
 #' @param fill logical. Fill missing values.
-#' @param data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @param data.directory character. Destination directory for downloaded data 
+#' files. Defaults to package install extdata/marketdata directory.
 #' @param download.data logical. Whether to download a fresh copy of the data file.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
-#' @param env character. Environment to auto.assign the return value to. Defaults to .GlobalEnv
+#' @param env character. Environment to auto.assign the return value to. 
+#' Defaults to .GlobalEnv
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @export
 #' @examples
 #' \dontrun{
-#' Load all data available up to the current minuute on bitcoincharts.com into the global environment
+#' Load all data available up to the current minuute on bitcoincharts.com into 
+#' the global environment
 #' load_all_data()
 #' }
-#' @import lubridate
+#' @import lubridate xts zoo
 load_all_data <- function(start.date = as.character(as.Date(now() - days(30))), 
                           end.date = as.character(as.Date(now() + days(1))), 
                           ohlc.frequency = 'days', 
@@ -535,16 +569,18 @@ load_all_data <- function(start.date = as.character(as.Date(now() - days(30))),
 }
 
 #' @title Get total number of trades ever executed on a given exchange
-#' @description Get total number of trades ever executed on a given exchange by counting lines in dump file
+#' @description Get total number of trades ever executed on a given exchange by 
+#' counting lines in dump file
 #' @param symbol character. Symbol to get total trade count for
-#' @param base.data.directory character. Destination directory for downloaded data files. Defaults to package install extdata/marketdata directory.
+#' @param base.data.directory character. Destination directory for downloaded 
+#' data files. Defaults to package install extdata/marketdata directory.
 #' @export
 #' @examples
 #' \dontrun{
 #' # Download all available market data in one fell swoop:
 #' download_all_daily_dumps()
 #' }
-#' @import data.table
+#' @importFrom data.table fread
 get_all_time_trade_count <- function(symbol, 
                                      base.data.directory = system.file('extdata', 
                                                                        'market-data', 
@@ -561,7 +597,8 @@ get_all_time_trade_count <- function(symbol,
 }
 
 #' @title Get list of all currently available market symbols
-#' @description Get list of all currently available market symbols from http://bitcoincharts.com/markets
+#' @description Get list of all currently available market symbols from 
+#' http://bitcoincharts.com/markets
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @seealso \code{\link{http://bitcoincharts.com/markets}}
@@ -593,7 +630,8 @@ get_symbol_listing <- function(debug = FALSE) {
 }
 
 #' @title Get detailed information for a specified exchange
-#' @description Get detailed listing of all currently available exchanges from http://bitcoincharts.com/markets
+#' @description Get detailed listing of all currently available exchanges from 
+#' http://bitcoincharts.com/markets
 #' @param symbol character. Exchange you wish to obtain info for
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
