@@ -4,7 +4,7 @@
 \alias{get_ohlcv_from_api}
 \title{Get OHLC for last two days of trades via API}
 \usage{
-get_ohlcv_from_api(symbol, start.date = as.character(now() - hours(6)),
+get_ohlcv_from_api(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()), data.directory = system.file("extdata",
   "market-data", mustWork = TRUE, package = "bitcoinchartsr"),
   ohlc.frequency = "hours", align = TRUE, fill = FALSE)

@@ -4,7 +4,7 @@
 \alias{get_ohlcv_from_file}
 \title{Query bitcoincharts.com API}
 \usage{
-get_ohlcv_from_file(symbol, start.date = as.character(now() - hours(6)),
+get_ohlcv_from_file(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()), ohlc.frequency = "hours", align = TRUE,
   fill = FALSE, data.directory = file.path(system.file("extdata",
   "market-data", mustWork = TRUE, package = "bitcoinchartsr"), symbol),

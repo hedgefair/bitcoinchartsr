@@ -105,16 +105,33 @@ download_all_data_files <- function(data.directory = system.file('extdata',
 #' @importFrom data.table fread
 #' @export
 get_ticks_from_file <- function(symbol, 
-                                start.date = as.character(now() - hours(6)), 
+                                start.date = as.character(now() - days(1)), 
                                 end.date = as.character(now()), 
                                 data.directory = file.path(system.file('extdata', 
                                                                        'market-data', 
                                                                        mustWork = TRUE, 
                                                                        package = 'bitcoinchartsr'), 
-                                                           symbol)) 
+                                                           symbol)) {
+  start <- as.POSIXct(start.date)
+  end <- as.POSIXct(end.date)
+  fl <- file.path(data.directory, symbol, paste0(symbol, '.csv'))
+  if(!file.exists(fl)) download_data_file(symbol = symbol, 
+                                          data.directory = data.directory, 
+                                          overwrite = TRUE)
+  ticks <- data.frame(fread(fl, 
+                            header = FALSE, 
+                            sep = ',', 
+                            colClasses = c('numeric', 'numeric', 'numeric')), 
+                      stringsAsFactors = FALSE)
+  ticks[ , 1 ] <- as.POSIXct(ticks[ , 1 ], origin = '1970-01-01')
+  ticks <- xts(ticks[ , -1 ], order.by = ticks[ , 1 ])
+  ticks <- ticks[ paste0(start, '::', end) ]
+  colnames(ticks) <- c('price', 'amount')
+  return(ticks)
+} 
   
-#' @title get_ticks_from_multiple_files
-#' @name get_ticks_from_multiple_files
+#' @title get_ticks_from_files
+#' @name get_ticks_from_files
 #' @description load data for all known symbols into the global environment
 #' @param start.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format 
 #' representing the start of the requested data series. Defaults to 30 days prior 
@@ -129,12 +146,12 @@ get_ticks_from_file <- function(symbol,
 #' \dontrun{
 #' Load all data available up to the current minuute on bitcoincharts.com into 
 #' the global environment
-#' get_ticks_from_multiple_files()
+#' get_ticks_from_files()
 #' }
 #' @import lubridate xts zoo
 #' @export
-get_ticks_from_multiple_files <- function(symbols = get_symbol_listing(),
-                                 start.date = as.character(now() - hours(6)), 
+get_ticks_from_files <- function(symbols = get_symbol_listing(),
+                                 start.date = as.character(now() - days(1)), 
                                  end.date = as.character(now()), 
                                  data.directory = system.file('extdata', 
                                                               'market-data', 
@@ -147,11 +164,15 @@ get_ticks_from_multiple_files <- function(symbols = get_symbol_listing(),
                         start.date = start.date, 
                         end.date = end.date)
   })
-  # convert data.frames to xts
-  ticks <- lapply(ticks, function(x) {
-    xts(x[ , -1 ], order.by = x[ , 1 ])
-  })
+  hasdata <- which(lapply(ticks, nrow) != 0)
+  symbols <- symbols[ hasdata ]
+  ticks <- ticks[ hasdata ]
+  if(length(ticks) == 0) return(NA)
   names(ticks) <- symbols
+  ticks <- lapply(names(ticks), function(x) {
+    colnames(ticks[[ x ]]) <- paste0(x, '.', colnames(ticks[[ x ]]))
+    ticks[[ x ]]
+  })
   # jam them all together into a massive xts object
   ticks <- do.call('cbind', ticks)
   ticks
@@ -168,7 +189,7 @@ get_ticks_from_multiple_files <- function(symbols = get_symbol_listing(),
 #' @import httr xts
 #' @export
 get_ticks_from_api <- function(symbol,
-                               start.date = as.character(now() - hours(6)),
+                               start.date = as.character(now() - days(1)),
                                end.date = as.character(now())) {
   start <- as.integer(as.POSIXct(start.date))
   url <- paste0('http://api.bitcoincharts.com/v1/trades.csv?symbol=', symbol, '&start=', start)
@@ -282,7 +303,7 @@ to_ohlc_xts <- function(ttime,
 #' }
 #' @import lubridate stringr xts zoo
 get_ohlcv_from_file <- function(symbol, 
-                                start.date = as.character(now() - hours(6)), 
+                                start.date = as.character(now() - days(1)), 
                                 end.date = as.character(now()), 
                                 ohlc.frequency = 'hours', 
                                 align = TRUE,
@@ -344,7 +365,7 @@ get_ohlcv_from_file <- function(symbol,
 #' }
 #' @import lubridate zoo xts
 get_ohlcv_from_api <- function(symbol, 
-                               start.date = as.character(now() - hours(6)),
+                               start.date = as.character(now() - days(1)),
                                end.date = as.character(now()),
                                data.directory = system.file('extdata', 
                                                             'market-data', 

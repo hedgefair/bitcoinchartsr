@@ -4,7 +4,7 @@
 \alias{get_ticks_from_api}
 \title{get_ticks_from_api}
 \usage{
-get_ticks_from_api(symbol, start.date = as.character(now() - hours(6)),
+get_ticks_from_api(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()))
 }
 \arguments{
