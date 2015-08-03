@@ -298,10 +298,7 @@ to_ohlc_xts <- function(ttime,
 #' @param fill logical. Fill missing values.
 #' @param data.directory character. Destination directory for downloaded data 
 #' files. Defaults to package install extdata directory.
-#' @param download.data logical. Whether to download a fresh copy of the data file.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
-#' @param auto.assign logical. Whether or not to auto-assign the variable to the 
-#' environment specified in the \code{env} param
 #' @param env character. Environment to auto.assign the return value to. 
 #' Defaults to .GlobalEnv
 #' @references \url{http://bitcoincharts.com/about/markets-api/}

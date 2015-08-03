@@ -32,11 +32,6 @@ files. Defaults to package install extdata directory.}
 
 \item{overwrite}{logical. Whether to overwrite the local copy of the data file.}
 
-\item{download.data}{logical. Whether to download a fresh copy of the data file.}
-
-\item{auto.assign}{logical. Whether or not to auto-assign the variable to the
-environment specified in the \code{env} param}
-
 \item{env}{character. Environment to auto.assign the return value to.
 Defaults to .GlobalEnv}
 }
