@@ -4,14 +4,18 @@
 \alias{get_ohlcv_from_api}
 \title{Get OHLC for last two days of trades via API}
 \usage{
-get_ohlcv_from_api(symbol, start.date = as.character(as.Date(now() -
-  days(2))), data.directory = system.file("extdata", "market-data", mustWork =
-  TRUE, package = "bitcoinchartsr"), ohlc.frequency = "hours", align = TRUE,
-  fill = FALSE, debug = FALSE)
+get_ohlcv_from_api(symbol, start.date = as.character(now() - hours(6)),
+  end.date = as.character(now()), data.directory = system.file("extdata",
+  "market-data", mustWork = TRUE, package = "bitcoinchartsr"),
+  ohlc.frequency = "hours", align = TRUE, fill = FALSE)
 }
 \arguments{
 \item{symbol}{character. Supported exchanges can be obtained by calling the
 \code{'get_symbol_listing()'} method.}
+
+\item{start.date}{}
+
+\item{end.date}{}
 
 \item{data.directory}{character. Destination directory for downloaded data
 files. Defaults to package install extdata/marketdata directory.}
@@ -22,8 +26,6 @@ files. Defaults to package install extdata/marketdata directory.}
 \item{align}{logical. Align time series index.}
 
 \item{fill}{logical. Fill missing values.}
-
-\item{debug}{logical. Debugging flag.}
 }
 \description{
 Utility function which returns the most recent OHLC candle from

@@ -4,12 +4,10 @@
 \alias{get_exchange_info}
 \title{Get detailed information for a specified exchange}
 \usage{
-get_exchange_info(symbol, debug = FALSE)
+get_exchange_info(symbol)
 }
 \arguments{
 \item{symbol}{character. Exchange you wish to obtain info for}
-
-\item{debug}{logical. Debugging flag.}
 }
 \description{
 Get detailed listing of all currently available exchanges from

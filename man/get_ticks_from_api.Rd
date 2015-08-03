@@ -4,10 +4,15 @@
 \alias{get_ticks_from_api}
 \title{get_ticks_from_api}
 \usage{
-get_ticks_from_api(symbol)
+get_ticks_from_api(symbol, start.date = as.character(now() - hours(6)),
+  end.date = as.character(now()))
 }
 \arguments{
 \item{symbol}{}
+
+\item{start.date}{}
+
+\item{end.date}{}
 }
 \value{
 data.frame with latest ticks from api

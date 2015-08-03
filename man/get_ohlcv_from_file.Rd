@@ -4,12 +4,11 @@
 \alias{get_ohlcv_from_file}
 \title{Query bitcoincharts.com API}
 \usage{
-get_ohlcv_from_file(symbol, start.date = as.character(as.Date(now() -
-  days(1))), end.date = as.character(as.Date(now() + days(1))),
-  ohlc.frequency = "hours", align = TRUE, fill = FALSE,
-  data.directory = file.path(system.file("extdata", "market-data", mustWork =
-  TRUE, package = "bitcoinchartsr"), symbol), download.data = FALSE,
-  overwrite = FALSE, auto.assign = FALSE, env = .GlobalEnv)
+get_ohlcv_from_file(symbol, start.date = as.character(now() - hours(6)),
+  end.date = as.character(now()), ohlc.frequency = "hours", align = TRUE,
+  fill = FALSE, data.directory = file.path(system.file("extdata",
+  "market-data", mustWork = TRUE, package = "bitcoinchartsr"), symbol),
+  download.data = FALSE, overwrite = FALSE)
 }
 \arguments{
 \item{symbol}{character. Supported exchanges can be obtained by calling the

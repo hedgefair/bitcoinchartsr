@@ -2,8 +2,6 @@
 
 export(download_all_data_files)
 export(download_data_file)
-export(get_all_ticks_from_file)
-export(get_all_time_trade_count)
 export(get_current_difficulty)
 export(get_exchange_info)
 export(get_markets_snapshot)

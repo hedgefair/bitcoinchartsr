@@ -4,8 +4,8 @@
 \alias{get_ticks_from_file}
 \title{get_ticks_from_file}
 \usage{
-get_ticks_from_file(symbol, start.date = as.character(as.Date(now() -
-  days(1))), end.date = as.character(as.Date(now())),
+get_ticks_from_file(symbol, start.date = as.character(now() - hours(6)),
+  end.date = as.character(now()),
   data.directory = file.path(system.file("extdata", "market-data", mustWork =
   TRUE, package = "bitcoinchartsr"), symbol))
 }
