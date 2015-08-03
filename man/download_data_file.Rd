@@ -5,8 +5,7 @@
 \title{Download single exchange data file from bitcoincharts.com API}
 \usage{
 download_data_file(symbol, data.directory = file.path(system.file("extdata",
-  "market-data", mustWork = TRUE, package = "bitcoinchartsr"), symbol),
-  overwrite = TRUE)
+  mustWork = TRUE, package = "bitcoinchartsr")), overwrite = TRUE)
 }
 \arguments{
 \item{symbol}{character. Supported exchanges can be obtained by calling the

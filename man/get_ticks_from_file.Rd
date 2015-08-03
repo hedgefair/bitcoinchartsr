@@ -6,8 +6,8 @@
 \usage{
 get_ticks_from_file(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()),
-  data.directory = file.path(system.file("extdata", "market-data", mustWork =
-  TRUE, package = "bitcoinchartsr"), symbol))
+  data.directory = file.path(system.file("extdata", mustWork = TRUE, package =
+  "bitcoinchartsr")))
 }
 \arguments{
 \item{symbol}{bitcoincharts symbol to get trade data from file for}

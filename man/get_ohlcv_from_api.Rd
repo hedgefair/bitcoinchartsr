@@ -6,8 +6,8 @@
 \usage{
 get_ohlcv_from_api(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()), data.directory = system.file("extdata",
-  "market-data", mustWork = TRUE, package = "bitcoinchartsr"),
-  ohlc.frequency = "hours", align = TRUE, fill = FALSE)
+  mustWork = TRUE, package = "bitcoinchartsr"), ohlc.frequency = "hours",
+  align = TRUE, fill = FALSE)
 }
 \arguments{
 \item{symbol}{character. Supported exchanges can be obtained by calling the

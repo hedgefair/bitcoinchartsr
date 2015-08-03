@@ -7,7 +7,7 @@
 get_ticks_from_files(symbols = get_symbol_listing(),
   start.date = as.character(now() - days(1)),
   end.date = as.character(now()), data.directory = system.file("extdata",
-  "market-data", mustWork = TRUE, package = "bitcoinchartsr"))
+  mustWork = TRUE, package = "bitcoinchartsr"))
 }
 \arguments{
 \item{symbols}{symbols to load ticks for}
