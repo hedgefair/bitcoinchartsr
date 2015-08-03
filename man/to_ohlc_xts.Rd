@@ -7,14 +7,14 @@
 to_ohlc_xts(ttime, tprice, tvolume, fmt, align = FALSE, fill = FALSE)
 }
 \arguments{
-\item{ttime}{}
+\item{ttime}{POSIXct timestamps}
 
-\item{tprice}{}
+\item{tprice}{numeric price}
 
-\item{tvolume}{}
+\item{tvolume}{numeric amount / volume}
 
-\item{fmt}{character. Possible formats include: "%Y%m%d %H %M %S" (seconds),
-"%Y%m%d %H %M" (minutes), "%Y%m%d %H" (hours), "%Y%m%d" (daily)}
+\item{fmt}{character. Possible formats include: "Ymd H M S" (seconds),
+"Ymd H M" (minutes), "Ymd H" (hours), "Ymd" (daily)}
 
 \item{align}{logical. Whether or not to align time series with align.time}
 

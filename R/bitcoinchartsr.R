@@ -206,11 +206,11 @@ get_ticks_from_api <- function(symbol,
 #' @description function which converts raw tick data to xts onject with OHLC
 #' fill whether or nto to fill in missing values so you have a regularly spaced 
 #' time series
-#' @param ttime
-#' @param tprice
-#' @param tvolume
-#' @param fmt character. Possible formats include: "%Y%m%d %H %M %S" (seconds), 
-#' "%Y%m%d %H %M" (minutes), "%Y%m%d %H" (hours), "%Y%m%d" (daily)
+#' @param ttime POSIXct timestamps
+#' @param tprice numeric price
+#' @param tvolume numeric amount / volume
+#' @param fmt character. Possible formats include: "Ymd H M S" (seconds), 
+#' "Ymd H M" (minutes), "Ymd H" (hours), "Ymd" (daily)
 #' @param align logical. Whether or not to align time series with align.time
 #' @param fill logical. Whether or not to impute values for missing time periods.
 #' @import xts zoo
