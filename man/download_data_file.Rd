@@ -12,7 +12,7 @@ download_data_file(symbol, data.directory = file.path(system.file("extdata",
 \code{'get_symbol_listing()'} method.}
 
 \item{data.directory}{character. Destination directory for downloaded data files.
-Defaults to package install extdata/marketdata for the symbol specified directory.}
+Defaults to package install extdata for the symbol specified directory.}
 
 \item{overwrite}{logical. Whether to overwrite the local copy of the data file.}
 

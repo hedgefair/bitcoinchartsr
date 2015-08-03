@@ -3,7 +3,7 @@
 #' @param symbol character. Supported exchanges can be obtained by calling the 
 #' \code{'get_symbol_listing()'} method.
 #' @param data.directory character. Destination directory for downloaded data files. 
-#' Defaults to package install extdata/marketdata for the symbol specified directory.
+#' Defaults to package install extdata for the symbol specified directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
 #' @param debug logical. Debugging flag.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
@@ -45,7 +45,7 @@ download_data_file <- function(symbol,
 #' @description Download all available data for all markets in one fell swoop. 
 #' Caution! Some exchange data files are > 500 MB!!!
 #' @param data.directory character. Destination directory for downloaded 
-#' data files. Defaults to package install extdata/marketdata directory.
+#' data files. Defaults to package install extdata directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @seealso \code{\link{http://api.bitcoincharts.com/v1/csv/}}
@@ -139,7 +139,7 @@ get_ticks_from_file <- function(symbol,
 #' @param end.date character. Character string in YYYY-MM-DD (%Y-%m-%d) format 
 #' representing the start of the requested data series. Defaults to current date + 1.
 #' @param data.directory character. Destination directory for downloaded data 
-#' files. Defaults to package install extdata/marketdata directory.
+#' files. Defaults to package install extdata directory.
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @examples
 #' \dontrun{
@@ -285,7 +285,7 @@ to_ohlc_xts <- function(ttime,
 #' @param align logical. Align time series index.
 #' @param fill logical. Fill missing values.
 #' @param data.directory character. Destination directory for downloaded data 
-#' files. Defaults to package install extdata/marketdata directory.
+#' files. Defaults to package install extdata directory.
 #' @param download.data logical. Whether to download a fresh copy of the data file.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
 #' @param auto.assign logical. Whether or not to auto-assign the variable to the 
@@ -346,7 +346,7 @@ get_ohlcv_from_file <- function(symbol,
 #' @param start.date
 #' @param end.date
 #' @param data.directory character. Destination directory for downloaded data 
-#' files. Defaults to package install extdata/marketdata directory.
+#' files. Defaults to package install extdata directory.
 #' @param ohlc.frequency character. Supported values are \code{seconds}, 
 #' \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years}
 #' @param align logical. Align time series index.

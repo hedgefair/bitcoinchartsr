@@ -20,7 +20,7 @@ to current date.}
 representing the start of the requested data series. Defaults to current date + 1.}
 
 \item{data.directory}{character. Destination directory for downloaded data
-files. Defaults to package install extdata/marketdata directory.}
+files. Defaults to package install extdata directory.}
 }
 \description{
 load data for all known symbols into the global environment

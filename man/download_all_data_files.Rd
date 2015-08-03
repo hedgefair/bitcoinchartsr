@@ -9,7 +9,7 @@ download_all_data_files(data.directory = system.file("extdata", mustWork =
 }
 \arguments{
 \item{data.directory}{character. Destination directory for downloaded
-data files. Defaults to package install extdata/marketdata directory.}
+data files. Defaults to package install extdata directory.}
 
 \item{overwrite}{logical. Whether to overwrite the local copy of the data file.}
 }

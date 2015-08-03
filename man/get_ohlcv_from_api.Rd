@@ -18,7 +18,7 @@ get_ohlcv_from_api(symbol, start.date = as.character(now() - days(1)),
 \item{end.date}{}
 
 \item{data.directory}{character. Destination directory for downloaded data
-files. Defaults to package install extdata/marketdata directory.}
+files. Defaults to package install extdata directory.}
 
 \item{ohlc.frequency}{character. Supported values are \code{seconds},
 \code{minutes}, \code{hours}, \code{days}, \code{months}, \code{years}}

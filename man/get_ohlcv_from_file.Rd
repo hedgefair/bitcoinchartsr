@@ -7,7 +7,7 @@
 get_ohlcv_from_file(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()), ohlc.frequency = "hours", align = TRUE,
   fill = FALSE, data.directory = file.path(system.file("extdata", mustWork =
-  TRUE, package = "bitcoinchartsr"), symbol), download.data = FALSE,
+  TRUE, package = "bitcoinchartsr")), download.data = FALSE,
   overwrite = FALSE)
 }
 \arguments{
@@ -29,7 +29,7 @@ representing the start of the requested data series. Defaults to current date + 
 \item{fill}{logical. Fill missing values.}
 
 \item{data.directory}{character. Destination directory for downloaded data
-files. Defaults to package install extdata/marketdata directory.}
+files. Defaults to package install extdata directory.}
 
 \item{download.data}{logical. Whether to download a fresh copy of the data file.}
 
