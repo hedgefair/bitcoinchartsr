@@ -7,7 +7,7 @@
 get_ticks_from_file(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()),
   data.directory = file.path(system.file("extdata", mustWork = TRUE, package =
-  "bitcoinchartsr")))
+  "bitcoinchartsr")), overwrite = FALSE)
 }
 \arguments{
 \item{symbol}{bitcoincharts symbol to get trade data from file for}
@@ -17,6 +17,8 @@ get_ticks_from_file(symbol, start.date = as.character(now() - days(1)),
 \item{end.date}{deafults to current time}
 
 \item{data.directory}{directory for data file}
+
+\item{overwrite}{whether or not to re-download the file}
 }
 \description{
 Download all historical trade data for a given symbol from

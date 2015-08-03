@@ -7,7 +7,7 @@
 get_ticks_from_files(symbols = get_symbol_listing(),
   start.date = as.character(now() - days(1)),
   end.date = as.character(now()), data.directory = system.file("extdata",
-  mustWork = TRUE, package = "bitcoinchartsr"))
+  mustWork = TRUE, package = "bitcoinchartsr"), overwrite = FALSE)
 }
 \arguments{
 \item{symbols}{symbols to load ticks for}
@@ -21,6 +21,8 @@ representing the start of the requested data series. Defaults to current date + 
 
 \item{data.directory}{character. Destination directory for downloaded data
 files. Defaults to package install extdata directory.}
+
+\item{overwrite}{whether or not to re-download files}
 }
 \description{
 load data for all known symbols into the global environment

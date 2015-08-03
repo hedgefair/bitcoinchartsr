@@ -7,8 +7,7 @@
 get_ohlcv_from_file(symbol, start.date = as.character(now() - days(1)),
   end.date = as.character(now()), ohlc.frequency = "hours", align = TRUE,
   fill = FALSE, data.directory = file.path(system.file("extdata", mustWork =
-  TRUE, package = "bitcoinchartsr")), download.data = FALSE,
-  overwrite = FALSE)
+  TRUE, package = "bitcoinchartsr")), overwrite = FALSE)
 }
 \arguments{
 \item{symbol}{character. Supported exchanges can be obtained by calling the
@@ -31,9 +30,9 @@ representing the start of the requested data series. Defaults to current date + 
 \item{data.directory}{character. Destination directory for downloaded data
 files. Defaults to package install extdata directory.}
 
-\item{download.data}{logical. Whether to download a fresh copy of the data file.}
-
 \item{overwrite}{logical. Whether to overwrite the local copy of the data file.}
+
+\item{download.data}{logical. Whether to download a fresh copy of the data file.}
 
 \item{auto.assign}{logical. Whether or not to auto-assign the variable to the
 environment specified in the \code{env} param}

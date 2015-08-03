@@ -5,7 +5,7 @@
 \title{Download all available archived trade data}
 \usage{
 download_all_data_files(data.directory = system.file("extdata", mustWork =
-  TRUE, package = "bitcoinchartsr"), overwrite = TRUE)
+  TRUE, package = "bitcoinchartsr"), overwrite = FALSE)
 }
 \arguments{
 \item{data.directory}{character. Destination directory for downloaded

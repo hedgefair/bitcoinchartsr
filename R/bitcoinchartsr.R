@@ -19,7 +19,7 @@ download_data_file <- function(symbol,
                                data.directory = file.path(system.file('extdata', 
                                                                       mustWork = TRUE, 
                                                                       package = 'bitcoinchartsr')), 
-                               overwrite = TRUE) {
+                               overwrite = FALSE) {
         file.name <- file.path(data.directory, paste0(symbol, '.csv'))
         if(file.exists(file.name)) {
                 if(overwrite) { 
@@ -59,7 +59,7 @@ download_data_file <- function(symbol,
 download_all_data_files <- function(data.directory = system.file('extdata', 
                                                                  mustWork = TRUE, 
                                                                  package = 'bitcoinchartsr'), 
-                                    overwrite = TRUE) {
+                                    overwrite = FALSE) {
         # get all csv download links from http://api.bitcoincharts.com/v1/csv/
         url <- 'http://api.bitcoincharts.com/v1/csv/'
         pg <- GET(url)
@@ -101,6 +101,7 @@ download_all_data_files <- function(data.directory = system.file('extdata',
 #' @param start.date defaults to 1 day before the current time
 #' @param end.date deafults to current time
 #' @param data.directory directory for data file
+#' @param overwrite whether or not to re-download the file
 #' @import lubridate xts 
 #' @importFrom data.table fread
 #' @export
@@ -109,14 +110,22 @@ get_ticks_from_file <- function(symbol,
                                 end.date = as.character(now()), 
                                 data.directory = file.path(system.file('extdata', 
                                                                        mustWork = TRUE, 
-                                                                       package = 'bitcoinchartsr'))) 
-{
+                                                                       package = 'bitcoinchartsr')),
+                                overwrite = FALSE) {
         start <- as.POSIXct(start.date)
         end <- as.POSIXct(end.date)
         fl <- file.path(data.directory, paste0(symbol, '.csv'))
-        if(!file.exists(fl)) fl <- download_data_file(symbol = symbol, 
-                                                      data.directory = data.directory, 
-                                                      overwrite = TRUE)
+        if(file.exists(fl)) { 
+                if(overwrite) {
+                        fl <- download_data_file(symbol = symbol, 
+                                                 data.directory = data.directory, 
+                                                 overwrite = TRUE)
+                }
+        } else {
+                fl <- download_data_file(symbol = symbol, 
+                                         data.directory = data.directory, 
+                                         overwrite = TRUE)
+        }
         ticks <- data.frame(fread(fl, 
                                   header = FALSE, 
                                   sep = ',', 
@@ -140,6 +149,7 @@ get_ticks_from_file <- function(symbol,
 #' representing the start of the requested data series. Defaults to current date + 1.
 #' @param data.directory character. Destination directory for downloaded data 
 #' files. Defaults to package install extdata directory.
+#' @param overwrite whether or not to re-download files
 #' @references \url{http://bitcoincharts.com/about/markets-api/}
 #' @examples
 #' \dontrun{
@@ -154,13 +164,15 @@ get_ticks_from_files <- function(symbols = get_symbol_listing(),
                                  end.date = as.character(now()), 
                                  data.directory = system.file('extdata', 
                                                               mustWork = TRUE, 
-                                                              package = 'bitcoinchartsr')) {
+                                                              package = 'bitcoinchartsr'),
+                                 overwrite = FALSE) {
         # load all ticks from file
         ticks <- lapply(symbols, function(x) {
                 get_ticks_from_file(symbol = x, 
                                     data.directory = data.directory, 
                                     start.date = start.date, 
-                                    end.date = end.date)
+                                    end.date = end.date,
+                                    overwrite = overwrite)
         })
         hasdata <- which(lapply(ticks, nrow) != 0)
         symbols <- symbols[ hasdata ]
@@ -309,7 +321,6 @@ get_ohlcv_from_file <- function(symbol,
                                 data.directory = file.path(system.file('extdata', 
                                                                        mustWork = TRUE, 
                                                                        package = 'bitcoinchartsr')), 
-                                download.data = FALSE, 
                                 overwrite = FALSE) {
         # sanity checks
         stopifnot(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))
@@ -321,10 +332,11 @@ get_ohlcv_from_file <- function(symbol,
         if(ohlc.frequency == 'months') formatstr <- '%Y%m'
         if(ohlc.frequency == 'years') formatstr <- '%Y'
         # get tick data for symbol
-        ticks <- get_ticks_from_file(symbol = symbol, 
+        ticks <- get_ticks_from_file(symbol = symbol,  
                                      data.directory = data.directory, 
                                      start.date = start.date, 
-                                     end.date = end.date)
+                                     end.date = end.date,
+                                     overwrite = overwrite)
         if(nrow(ticks) == 0) return(NA)
         # aggregate tick data to ohlcv format
         ohlc.data.xts <- to_ohlc_xts(ttime = index(ticks), 
