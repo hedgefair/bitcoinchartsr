@@ -20,25 +20,25 @@ download_data_file <- function(symbol,
                                                                       mustWork = TRUE, 
                                                                       package = 'bitcoinchartsr')), 
                                overwrite = FALSE) {
-  file.name <- file.path(data.directory, paste0(symbol, '.csv'))
-  if(file.exists(file.name)) {
-    if(overwrite) { 
-      unlink(file.name) 
-    } else { 
-      message('skipped')
-      return(file.name)
-    }
-  }
-  file.name <- paste0(file.name, '.gz')
-  url <- paste0('http://api.bitcoincharts.com/v1/csv/', symbol, '.csv.gz')
-  message(url)
-  res <- GET(url, verbose(), progress(), write_disk(file.name, overwrite = TRUE))
-  stop_for_status(res)
-  message('downloaded')
-  # now gunzip the file
-  new.file.name <- str_replace(file.name, '.gz', '')
-  gunzip(filename = file.name, destname = new.file.name, overwrite=TRUE)
-  return(new.file.name)
+        file.name <- file.path(data.directory, paste0(symbol, '.csv'))
+        if(file.exists(file.name)) {
+                if(overwrite) { 
+                        unlink(file.name) 
+                } else { 
+                        message('skipped')
+                        return(file.name)
+                }
+        }
+        file.name <- paste0(file.name, '.gz')
+        url <- paste0('http://api.bitcoincharts.com/v1/csv/', symbol, '.csv.gz')
+        message(url)
+        res <- GET(url, verbose(), progress(), write_disk(file.name, overwrite = TRUE))
+        stop_for_status(res)
+        message('downloaded')
+        # now gunzip the file
+        new.file.name <- str_replace(file.name, '.gz', '')
+        gunzip(filename = file.name, destname = new.file.name, overwrite=TRUE)
+        return(new.file.name)
 }
 
 #' @title Download all available archived trade data
@@ -60,36 +60,36 @@ download_all_data_files <- function(data.directory = system.file('extdata',
                                                                  mustWork = TRUE, 
                                                                  package = 'bitcoinchartsr'), 
                                     overwrite = FALSE) {
-  # get all csv download links from http://api.bitcoincharts.com/v1/csv/
-  url <- 'http://api.bitcoincharts.com/v1/csv/'
-  pg <- GET(url)
-  stop_for_status(pg)
-  pg <- content(pg)
-  files <- setdiff(unlist(lapply(xpathApply(pg, '//a'), xmlGetAttr, 'href')), '../')
-  urls <- paste0(url, files)
-  # download the files if needed
-  file.names <- lapply(sample(urls), function(url) {
-    message(url)
-    dir.name <- file.path(data.directory, str_replace_all(basename(url), '\\.csv\\.gz', ''))
-    file.name <- file.path(dir.name, basename(url))
-    # if data dir doesn't exist create it
-    if(!file.exists(dir.name)) dir.create(dir.name, showWarnings = TRUE)
-    if(overwrite | !exists(file.name)) {
-      res <- GET(url, verbose(), progress(), write_disk(file.name, overwrite = TRUE))
-      stop_for_status(res)
-      message('downloaded')
-      Sys.sleep(1)
-      # now gunzip the file
-      new.file.name <- str_replace(file.name, '.gz', '')
-      gunzip(filename = file.name, destname = new.file.name, overwrite=TRUE)
-      return(new.file.name)
-    } else {
-      message('skipped')
-      return(NA)
-    }
-  })
-  file.names <- unlist(file.names)
-  file.names
+        # get all csv download links from http://api.bitcoincharts.com/v1/csv/
+        url <- 'http://api.bitcoincharts.com/v1/csv/'
+        pg <- GET(url)
+        stop_for_status(pg)
+        pg <- content(pg)
+        files <- setdiff(unlist(lapply(xpathApply(pg, '//a'), xmlGetAttr, 'href')), '../')
+        urls <- paste0(url, files)
+        # download the files if needed
+        file.names <- lapply(sample(urls), function(url) {
+                message(url)
+                dir.name <- file.path(data.directory, str_replace_all(basename(url), '\\.csv\\.gz', ''))
+                file.name <- file.path(dir.name, basename(url))
+                # if data dir doesn't exist create it
+                if(!file.exists(dir.name)) dir.create(dir.name, showWarnings = TRUE)
+                if(overwrite | !exists(file.name)) {
+                        res <- GET(url, verbose(), progress(), write_disk(file.name, overwrite = TRUE))
+                        stop_for_status(res)
+                        message('downloaded')
+                        Sys.sleep(1)
+                        # now gunzip the file
+                        new.file.name <- str_replace(file.name, '.gz', '')
+                        gunzip(filename = file.name, destname = new.file.name, overwrite=TRUE)
+                        return(new.file.name)
+                } else {
+                        message('skipped')
+                        return(NA)
+                }
+        })
+        file.names <- unlist(file.names)
+        file.names
 }
 
 #' @title get_ticks_from_file
@@ -112,30 +112,30 @@ get_ticks_from_file <- function(symbol,
                                                                        mustWork = TRUE, 
                                                                        package = 'bitcoinchartsr')),
                                 overwrite = FALSE) {
-  start <- as.POSIXct(start.date)
-  end <- as.POSIXct(end.date)
-  fl <- file.path(data.directory, paste0(symbol, '.csv'))
-  if(file.exists(fl)) { 
-    if(overwrite) {
-      fl <- download_data_file(symbol = symbol, 
-                               data.directory = data.directory, 
-                               overwrite = TRUE)
-    }
-  } else {
-    fl <- download_data_file(symbol = symbol, 
-                             data.directory = data.directory, 
-                             overwrite = TRUE)
-  }
-  ticks <- data.frame(fread(fl, 
-                            header = FALSE, 
-                            sep = ',', 
-                            colClasses = c('numeric', 'numeric', 'numeric')), 
-                      stringsAsFactors = FALSE)
-  ticks[ , 1 ] <- as.POSIXct(ticks[ , 1 ], origin = '1970-01-01')
-  ticks <- xts(ticks[ , -1 ], order.by = ticks[ , 1 ])
-  ticks <- ticks[ paste0(start, '::', end) ]
-  colnames(ticks) <- c('price', 'amount')
-  return(ticks)
+        start <- as.POSIXct(start.date)
+        end <- as.POSIXct(end.date)
+        fl <- file.path(data.directory, paste0(symbol, '.csv'))
+        if(file.exists(fl)) { 
+                if(overwrite) {
+                        fl <- download_data_file(symbol = symbol, 
+                                                 data.directory = data.directory, 
+                                                 overwrite = TRUE)
+                }
+        } else {
+                fl <- download_data_file(symbol = symbol, 
+                                         data.directory = data.directory, 
+                                         overwrite = TRUE)
+        }
+        ticks <- data.frame(fread(fl, 
+                                  header = FALSE, 
+                                  sep = ',', 
+                                  colClasses = c('numeric', 'numeric', 'numeric')), 
+                            stringsAsFactors = FALSE)
+        ticks[ , 1 ] <- as.POSIXct(ticks[ , 1 ], origin = '1970-01-01')
+        ticks <- xts(ticks[ , -1 ], order.by = ticks[ , 1 ])
+        ticks <- ticks[ paste0(start, '::', end) ]
+        colnames(ticks) <- c('price', 'amount')
+        return(ticks)
 } 
 
 #' @title get_ticks_from_files
@@ -166,26 +166,26 @@ get_ticks_from_files <- function(symbols = get_symbol_listing(),
                                                               mustWork = TRUE, 
                                                               package = 'bitcoinchartsr'),
                                  overwrite = FALSE) {
-  # load all ticks from file
-  ticks <- lapply(symbols, function(x) {
-    get_ticks_from_file(symbol = x, 
-                        data.directory = data.directory, 
-                        start.date = start.date, 
-                        end.date = end.date,
-                        overwrite = overwrite)
-  })
-  hasdata <- which(lapply(ticks, nrow) != 0)
-  symbols <- symbols[ hasdata ]
-  ticks <- ticks[ hasdata ]
-  if(length(ticks) == 0) return(NA)
-  names(ticks) <- symbols
-  ticks <- lapply(names(ticks), function(x) {
-    colnames(ticks[[ x ]]) <- paste0(x, '.', colnames(ticks[[ x ]]))
-    ticks[[ x ]]
-  })
-  # jam them all together into a massive xts object
-  ticks <- do.call('cbind', ticks)
-  ticks
+        # load all ticks from file
+        ticks <- lapply(symbols, function(x) {
+                get_ticks_from_file(symbol = x, 
+                                    data.directory = data.directory, 
+                                    start.date = start.date, 
+                                    end.date = end.date,
+                                    overwrite = overwrite)
+        })
+        hasdata <- which(lapply(ticks, nrow) != 0)
+        symbols <- symbols[ hasdata ]
+        ticks <- ticks[ hasdata ]
+        if(length(ticks) == 0) return(NA)
+        names(ticks) <- symbols
+        ticks <- lapply(names(ticks), function(x) {
+                colnames(ticks[[ x ]]) <- paste0(x, '.', colnames(ticks[[ x ]]))
+                ticks[[ x ]]
+        })
+        # jam them all together into a massive xts object
+        ticks <- do.call('cbind', ticks)
+        ticks
 }
 
 #' get_ticks_from_api
@@ -201,17 +201,17 @@ get_ticks_from_files <- function(symbols = get_symbol_listing(),
 get_ticks_from_api <- function(symbol,
                                start.date = as.character(now() - days(1)),
                                end.date = as.character(now())) {
-  start <- as.integer(as.POSIXct(start.date))
-  url <- paste0('http://api.bitcoincharts.com/v1/trades.csv?symbol=', symbol, '&start=', start)
-  ticks <- GET(url, verbose())
-  stop_for_status(ticks)
-  ticks <- content(ticks, as = 'text')
-  ticks <- read.csv(textConnection(ticks), header = FALSE)
-  ticks <- xts(ticks[ , 2:3 ], 
-               order.by = as.POSIXct(ticks[ , 1 ], origin = '1970-01-01'))
-  colnames(ticks) <- c('price', 'amount')
-  ticks <- ticks[ paste0('::', end.date) ]
-  ticks
+        start <- as.integer(as.POSIXct(start.date))
+        url <- paste0('http://api.bitcoincharts.com/v1/trades.csv?symbol=', symbol, '&start=', start)
+        ticks <- GET(url, verbose())
+        stop_for_status(ticks)
+        ticks <- content(ticks, as = 'text')
+        ticks <- read.csv(textConnection(ticks), header = FALSE)
+        ticks <- xts(ticks[ , 2:3 ], 
+                     order.by = as.POSIXct(ticks[ , 1 ], origin = '1970-01-01'))
+        colnames(ticks) <- c('price', 'amount')
+        ticks <- ticks[ paste0('::', end.date) ]
+        ticks
 }
 
 #' @title to_ohlc_xts
@@ -232,55 +232,55 @@ to_ohlc_xts <- function(ttime,
                         fmt, 
                         align = FALSE,  
                         fill = FALSE) {
-  if(fill) align <- TRUE
-  ttime.int <- format(ttime, fmt)
-  df <- data.frame(time = ttime[ tapply(1:length(ttime), ttime.int, function(x) { head(x, 1) }) ],
-                   Open = tapply(tprice, ttime.int, function(x) { head(x, 1) }), 
-                   High = tapply(as.numeric(tprice), ttime.int, max),
-                   Low = tapply(as.numeric(tprice), ttime.int, min),
-                   Close = tapply(tprice, ttime.int, function(x) { tail(x, 1) }),
-                   Volume = tapply(as.numeric(tvolume), ttime.int, function(x) { sum(x) }),
-                   Ticks = tapply(as.numeric(tvolume), ttime.int, length))
-  # fill in any missing time slots and align along an appropriate boundary (minute, hour or day)
-  if(align) {
-    if(fmt == '%Y%m%d %H %M %S') {
-      ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 1)  
-      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 1), n = 1)
-    } else if(fmt == '%Y%m%d %H %M') {
-      ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 60)  
-      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 60), n = 60)
-    } else if(fmt == '%Y%m%d %H') {
-      ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 60*60) 
-      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 60*60), n = 60*60)
-    } else if(fmt == '%Y%m%d') {
-      ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 60*60*24) 
-      idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 60*60*24), n = 60*60*24)
-    } else if(fmt == '%Y%m') {
-      ohlc.xts <- as.xts(df[ 2:7 ], order.by = df$time)
-      return(ohlc.xts)
-    } else if(fmt == '%Y') {
-      ohlc.xts <- as.xts(df[ 2:7 ], order.by = df$time)
-      return(ohlc.xts)
-    }   
-  } else ohlc.xts <- as.xts(df[ 2:7 ], order.by = df$time)
-  if(fill) {
-    empties <- data.frame(Open = rep(NA, times = length(idx)),
-                          High = rep(NA, times = length(idx)),
-                          Low = rep(NA, times = length(idx)),
-                          Close = rep(NA, times = length(idx)),
-                          Volume = rep(NA, times = length(idx)),
-                          Ticks = rep(NA, times = length(idx)),
-                          row.names = idx)
-    empties <- as.xts(empties, order.by = idx)
-    ohlc.xts <- merge(ohlc.xts, empties)[ , 1:6 ]
-    # fill any NA values with previous available ticks close ( vol = 0, op, hi, lo all should equal previous close)
-    missing.vals <- which(is.na(ohlc.xts$Open))
-    ohlc.xts[ is.na(ohlc.xts$Volume), 'Volume' ] <- 0
-    ohlc.xts[ is.na(ohlc.xts$Ticks), 'Ticks' ] <- 0
-    ohlc.xts[ ,'Close' ] <- na.locf(ohlc.xts$Close)
-    ohlc.xts[ missing.vals, c('Open', 'High', 'Low') ] <- ohlc.xts[ missing.vals, 'Close' ]  
-  }
-  ohlc.xts
+        if(fill) align <- TRUE
+        ttime.int <- format(ttime, fmt)
+        df <- data.frame(time = ttime[ tapply(1:length(ttime), ttime.int, function(x) { head(x, 1) }) ],
+                         Open = tapply(tprice, ttime.int, function(x) { head(x, 1) }), 
+                         High = tapply(as.numeric(tprice), ttime.int, max),
+                         Low = tapply(as.numeric(tprice), ttime.int, min),
+                         Close = tapply(tprice, ttime.int, function(x) { tail(x, 1) }),
+                         Volume = tapply(as.numeric(tvolume), ttime.int, function(x) { sum(x) }),
+                         Ticks = tapply(as.numeric(tvolume), ttime.int, length))
+        # fill in any missing time slots and align along an appropriate boundary (minute, hour or day)
+        if(align) {
+                if(fmt == '%Y%m%d %H %M %S') {
+                        ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 1)  
+                        idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 1), n = 1)
+                } else if(fmt == '%Y%m%d %H %M') {
+                        ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 60)  
+                        idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 60), n = 60)
+                } else if(fmt == '%Y%m%d %H') {
+                        ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 60*60) 
+                        idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 60*60), n = 60*60)
+                } else if(fmt == '%Y%m%d') {
+                        ohlc.xts <- align.time(as.xts(df[ 2:7 ], order.by = df$time), n = 60*60*24) 
+                        idx <- align.time(seq(start(ohlc.xts), end(ohlc.xts), by = 60*60*24), n = 60*60*24)
+                } else if(fmt == '%Y%m') {
+                        ohlc.xts <- as.xts(df[ 2:7 ], order.by = df$time)
+                        return(ohlc.xts)
+                } else if(fmt == '%Y') {
+                        ohlc.xts <- as.xts(df[ 2:7 ], order.by = df$time)
+                        return(ohlc.xts)
+                }   
+        } else ohlc.xts <- as.xts(df[ 2:7 ], order.by = df$time)
+        if(fill) {
+                empties <- data.frame(Open = rep(NA, times = length(idx)),
+                                      High = rep(NA, times = length(idx)),
+                                      Low = rep(NA, times = length(idx)),
+                                      Close = rep(NA, times = length(idx)),
+                                      Volume = rep(NA, times = length(idx)),
+                                      Ticks = rep(NA, times = length(idx)),
+                                      row.names = idx)
+                empties <- as.xts(empties, order.by = idx)
+                ohlc.xts <- merge(ohlc.xts, empties)[ , 1:6 ]
+                # fill any NA values with previous available ticks close ( vol = 0, op, hi, lo all should equal previous close)
+                missing.vals <- which(is.na(ohlc.xts$Open))
+                ohlc.xts[ is.na(ohlc.xts$Volume), 'Volume' ] <- 0
+                ohlc.xts[ is.na(ohlc.xts$Ticks), 'Ticks' ] <- 0
+                ohlc.xts[ ,'Close' ] <- na.locf(ohlc.xts$Close)
+                ohlc.xts[ missing.vals, c('Open', 'High', 'Low') ] <- ohlc.xts[ missing.vals, 'Close' ]  
+        }
+        ohlc.xts
 }
 
 #' @title Query bitcoincharts.com API
@@ -319,32 +319,32 @@ get_ohlcv_from_file <- function(symbol,
                                                                        mustWork = TRUE, 
                                                                        package = 'bitcoinchartsr')), 
                                 overwrite = FALSE) {
-  # sanity checks
-  stopifnot(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))
-  # get the format str for ohlc transformation
-  if(ohlc.frequency == 'seconds') formatstr <- '%Y%m%d %H %M %S'
-  if(ohlc.frequency == 'minutes') formatstr <- '%Y%m%d %H %M'
-  if(ohlc.frequency == 'hours') formatstr <- '%Y%m%d %H'
-  if(ohlc.frequency == 'days') formatstr <- '%Y%m%d'
-  if(ohlc.frequency == 'months') formatstr <- '%Y%m'
-  if(ohlc.frequency == 'years') formatstr <- '%Y'
-  # get tick data for symbol
-  ticks <- get_ticks_from_file(symbol = symbol,  
-                               data.directory = data.directory, 
-                               start.date = start.date, 
-                               end.date = end.date,
-                               overwrite = overwrite)
-  if(nrow(ticks) == 0) return(NA)
-  # aggregate tick data to ohlcv format
-  ohlc.data.xts <- to_ohlc_xts(ttime = index(ticks), 
-                               tprice = as.numeric(ticks$price), 
-                               tvolume = as.numeric(ticks$amount), 
-                               fmt = formatstr, 
-                               align = align, 
-                               fill = fill)    
-  ohlc.data.xts <- setNames(ohlc.data.xts, 
-                            c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
-  return(ohlc.data.xts)  
+        # sanity checks
+        stopifnot(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))
+        # get the format str for ohlc transformation
+        if(ohlc.frequency == 'seconds') formatstr <- '%Y%m%d %H %M %S'
+        if(ohlc.frequency == 'minutes') formatstr <- '%Y%m%d %H %M'
+        if(ohlc.frequency == 'hours') formatstr <- '%Y%m%d %H'
+        if(ohlc.frequency == 'days') formatstr <- '%Y%m%d'
+        if(ohlc.frequency == 'months') formatstr <- '%Y%m'
+        if(ohlc.frequency == 'years') formatstr <- '%Y'
+        # get tick data for symbol
+        ticks <- get_ticks_from_file(symbol = symbol,  
+                                     data.directory = data.directory, 
+                                     start.date = start.date, 
+                                     end.date = end.date,
+                                     overwrite = overwrite)
+        if(nrow(ticks) == 0) return(NA)
+        # aggregate tick data to ohlcv format
+        ohlc.data.xts <- to_ohlc_xts(ttime = index(ticks), 
+                                     tprice = as.numeric(ticks$price), 
+                                     tvolume = as.numeric(ticks$amount), 
+                                     fmt = formatstr, 
+                                     align = align, 
+                                     fill = fill)    
+        ohlc.data.xts <- setNames(ohlc.data.xts, 
+                                  c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
+        return(ohlc.data.xts)  
 }
 
 #' @title Get OHLC for last two days of trades via API
@@ -378,28 +378,28 @@ get_ohlcv_from_api <- function(symbol,
                                ohlc.frequency = 'hours', 
                                align = TRUE,
                                fill = FALSE) {
-  # sanity checks
-  stopifnot(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))
-  # get the format str for ohlc transformation
-  if(ohlc.frequency == 'seconds') formatstr <- '%Y%m%d %H %M %S'
-  if(ohlc.frequency == 'minutes') formatstr <- '%Y%m%d %H %M'
-  if(ohlc.frequency == 'hours') formatstr <- '%Y%m%d %H'
-  if(ohlc.frequency == 'days') formatstr <- '%Y%m%d'
-  if(ohlc.frequency == 'months') formatstr <- '%Y%m'
-  if(ohlc.frequency == 'years') formatstr <- '%Y'
-  # get tick data from api
-  ticks <- get_ticks_from_api(symbol = symbol, start = start.date)
-  if(nrow(ticks) == 0) return(NA)
-  # aggregate tick data to ohlcv format
-  ohlc.data.xts <- to_ohlc_xts(ttime = index(ticks), 
-                               tprice = as.numeric(ticks$price), 
-                               tvolume = as.numeric(ticks$amount), 
-                               fmt = formatstr, 
-                               align = align, 
-                               fill = fill)    
-  ohlc.data.xts <- setNames(ohlc.data.xts, 
-                            c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
-  ohlc.data.xts
+        # sanity checks
+        stopifnot(ohlc.frequency %in% c('seconds', 'minutes', 'hours', 'days', 'months', 'years'))
+        # get the format str for ohlc transformation
+        if(ohlc.frequency == 'seconds') formatstr <- '%Y%m%d %H %M %S'
+        if(ohlc.frequency == 'minutes') formatstr <- '%Y%m%d %H %M'
+        if(ohlc.frequency == 'hours') formatstr <- '%Y%m%d %H'
+        if(ohlc.frequency == 'days') formatstr <- '%Y%m%d'
+        if(ohlc.frequency == 'months') formatstr <- '%Y%m'
+        if(ohlc.frequency == 'years') formatstr <- '%Y'
+        # get tick data from api
+        ticks <- get_ticks_from_api(symbol = symbol, start = start.date)
+        if(nrow(ticks) == 0) return(NA)
+        # aggregate tick data to ohlcv format
+        ohlc.data.xts <- to_ohlc_xts(ttime = index(ticks), 
+                                     tprice = as.numeric(ticks$price), 
+                                     tvolume = as.numeric(ticks$amount), 
+                                     fmt = formatstr, 
+                                     align = align, 
+                                     fill = fill)    
+        ohlc.data.xts <- setNames(ohlc.data.xts, 
+                                  c('Open', 'High', 'Low', 'Close', 'Volume', 'Ticks'))
+        ohlc.data.xts
 }
 
 #' @title Get list of all currently available market symbols
@@ -416,13 +416,13 @@ get_ohlcv_from_api <- function(symbol,
 #' }
 #' @import httr XML
 get_symbol_listing <- function(debug = FALSE) {
-  exchanges <- content(GET('http://bitcoincharts.com/markets/list/'))
-  exchanges <- xpathApply(exchanges, '//a')
-  exchanges <- lapply(exchanges, xmlValue)
-  exchanges <- unlist(exchanges)
-  exchanges <- str_extract_all(exchanges, '[a-z0-9]+[A-Z]{3,6}$')
-  exchanges <- unlist(exchanges)
-  exchanges
+        exchanges <- content(GET('http://bitcoincharts.com/markets/list/'))
+        exchanges <- xpathApply(exchanges, '//a')
+        exchanges <- lapply(exchanges, xmlValue)
+        exchanges <- unlist(exchanges)
+        exchanges <- str_extract_all(exchanges, '[a-z0-9]+[A-Z]{3,6}$')
+        exchanges <- unlist(exchanges)
+        exchanges
 }
 
 #' @title Get detailed information for a specified exchange
@@ -439,15 +439,15 @@ get_symbol_listing <- function(debug = FALSE) {
 #' }
 #' @import XML httr
 get_exchange_info <- function(symbol) {
-  markets.url <- 'http://bitcoincharts.com/markets/'
-  markets.url <- paste0(markets.url, '/', symbol, '.html')
-  pg <- GET(markets.url)
-  stop_for_status(pg)
-  pg <- content(pg)
-  labels <- xmlApply(xpathApply(pg, "//div//div//p//label"), xmlValue)
-  vals <- xmlApply(xpathApply(pg, "//div//div//p//span"), xmlValue)
-  df <- data.frame(cbind(key = labels, value = vals), stringsAsFactors = FALSE)
-  df
+        markets.url <- 'http://bitcoincharts.com/markets/'
+        markets.url <- paste0(markets.url, '/', symbol, '.html')
+        pg <- GET(markets.url)
+        stop_for_status(pg)
+        pg <- content(pg)
+        labels <- xmlApply(xpathApply(pg, "//div//div//p//label"), xmlValue)
+        vals <- xmlApply(xpathApply(pg, "//div//div//p//span"), xmlValue)
+        df <- data.frame(cbind(key = labels, value = vals), stringsAsFactors = FALSE)
+        df
 }
 
 #' @title Get total mined coins from site header table
@@ -461,13 +461,13 @@ get_exchange_info <- function(symbol) {
 #' }
 #' @import XML httr
 get_total_mined_coins <- function() {
-  markets.url = 'http://bitcoincharts.com/markets/'
-  pg <- GET(markets.url)
-  stop_for_status(pg)
-  pg <- content(pg)
-  tbl <- readHTMLTable(pg, header = FALSE)[[ 1 ]]
-  colnames(tbl) <-c('key', 'value')
-  tbl
+        markets.url = 'http://bitcoincharts.com/markets/'
+        pg <- GET(markets.url)
+        stop_for_status(pg)
+        pg <- content(pg)
+        tbl <- readHTMLTable(pg, header = FALSE)[[ 1 ]]
+        colnames(tbl) <-c('key', 'value')
+        tbl
 }
 
 #' @title Get current network difficulty from site header
@@ -481,13 +481,13 @@ get_total_mined_coins <- function() {
 #' }
 #' @import XML httr
 get_current_difficulty <- function() {
-  markets.url = 'http://bitcoincharts.com/markets/'
-  pg <- GET(markets.url)
-  stop_for_status(pg)
-  pg <- content(pg)
-  tbl <- readHTMLTable(pg, header = FALSE)[[ 2 ]]
-  colnames(tbl) <-c('key', 'value')
-  tbl
+        markets.url = 'http://bitcoincharts.com/markets/'
+        pg <- GET(markets.url)
+        stop_for_status(pg)
+        pg <- content(pg)
+        tbl <- readHTMLTable(pg, header = FALSE)[[ 2 ]]
+        colnames(tbl) <-c('key', 'value')
+        tbl
 }
 
 #' @title Get total network hashing power from site header
@@ -501,13 +501,13 @@ get_current_difficulty <- function() {
 #' }
 #' @import XML httr
 get_total_network_hashing_power <- function() {
-  markets.url = 'http://bitcoincharts.com/markets/'
-  pg <- GET(markets.url)
-  stop_for_status(pg)
-  pg <- content(pg)
-  tbl <- readHTMLTable(pg, header = FALSE)[[ 3 ]]
-  colnames(tbl) <-c('key', 'value')
-  tbl
+        markets.url = 'http://bitcoincharts.com/markets/'
+        pg <- GET(markets.url)
+        stop_for_status(pg)
+        pg <- content(pg)
+        tbl <- readHTMLTable(pg, header = FALSE)[[ 3 ]]
+        colnames(tbl) <-c('key', 'value')
+        tbl
 }
 
 #' @title Get snapshots of all markets listed on the site
@@ -521,69 +521,69 @@ get_total_network_hashing_power <- function() {
 #' }
 #' @import stringr XML
 get_markets_snapshot <- function() {
-  stop('Broken!')
-  markets.url = 'http://bitcoincharts.com/markets/'
-  tbls <- readHTMLTable(markets.url)
-  tbl <- tbls[[ 4 ]]
-  tbl <- apply(tbl, 2, str_trim)
-  tbl <- apply(tbl, 2, str_replace_all, '\n|\t', ' ')
-  tbl <- apply(tbl, 2, str_replace_all, ' {2,}', ' ')  
-  tbl <- data.frame(tbl, stringsAsFactors = FALSE)
-  symbol <- sapply(str_split(tbl$Symbol, ' '), last)
-  name <- sapply(sapply(str_split(tbl$Symbol, ' '), 
-                        function(x) x[ 1:(length(x) - 1) ]), paste0, collapse = ' ')
-  last.price <- sapply(str_split(tbl$Latest.Price, ' '), '[', 1)
-  last.price.time <- sapply(sapply(str_split(tbl$Latest.Price, ' '), 
-                                   function(x) x[ 2:length(x) ]), paste0, collapse = ' ')
-  avgs.30.day <- data.frame(matrix(unlist(str_split(tbl$Average, ' ')), 
-                                   ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
-  vols.30.day <- data.frame(matrix(unlist(str_split(tbl$Volume, ' ')), 
-                                   ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
-  low.high.30.day <- data.frame(matrix(unlist(str_split(tbl$Low.High, ' ')), 
-                                       ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)
-  avgs.24.hr <- data.frame(matrix(unlist(str_split(str_replace(tbl$X24h.Avg., '^—$', 'NA NA NA'), ' ')), 
-                                  ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
-  vols.24.hr <- data.frame(matrix(unlist(str_split(tbl$Volume.1, ' ')), 
-                                  ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
-  low.high.24.hr <- data.frame(matrix(unlist(str_split(tbl$Low.High.1, ' ')), 
-                                      ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)  
-  tbl <- cbind(change = tbl$V1, symbol, name, last.price, last.price.time, avgs.30.day,
-               tbl$Bid, tbl$Ask, vols.30.day, low.high.30.day, avgs.24.hr, vols.24.hr, 
-               low.high.24.hr)
-  tbl <- apply(tbl, 2, str_replace_all, ',|%', '')
-  tbl <- apply(tbl, 2, str_replace_all, '—', NA)
-  tbl <- data.frame(tbl, stringsAsFactors = FALSE)
-  tbl <- setNames(tbl, c('change', 'symbol', 'name', 'last.price', 'last.price.when', 
-                         'price.30.day', 'price.30.day.change', 'price.30.day.change.percent',
-                         'bid', 'ask', 
-                         'vol.30.day.btc', 'vol.30.day.fiat', 'vol.30.day.currency',
-                         'low.30.day', 'high.30.day', 
-                         'price.24.hr', 'price.24.hr.change', 'price.24.hr.change.percent',
-                         'vol.24.hr.btc', 'vol.24.hr.fiat', 'vol.24.hr.currency',
-                         'low.24.hr', 'high.24.hr'))
-  tbl <- transform(tbl, 
-                   change = factor(str_trim(str_replace(change, '[A-Z]{3}', ''))),
-                   name = factor(str_trim(name)),
-                   last.price = as.numeric(last.price),
-                   price.30.day = as.numeric(price.30.day),
-                   price.30.day.change = as.numeric(price.30.day.change),
-                   price.30.day.change.percent = as.numeric(price.30.day.change.percent),
-                   bid = as.numeric(bid),
-                   ask = as.numeric(ask),
-                   vol.30.day.btc = as.numeric(vol.30.day.btc), 
-                   vol.30.day.fiat = as.numeric(vol.30.day.fiat), 
-                   vol.30.day.currency = factor(vol.30.day.currency),
-                   low.30.day = as.numeric(low.30.day), 
-                   high.30.day = as.numeric(high.30.day), 
-                   price.24.hr = as.numeric(price.24.hr), 
-                   price.24.hr.change = as.numeric(price.24.hr.change), 
-                   price.24.hr.change.percent = as.numeric(price.24.hr.change.percent),
-                   vol.24.hr.btc = as.numeric(vol.24.hr.btc), 
-                   vol.24.hr.fiat = as.numeric(vol.24.hr.fiat), 
-                   vol.24.hr.currency = factor(vol.24.hr.currency),
-                   low.24.hr = as.numeric(low.24.hr), 
-                   high.24.hr = as.numeric(high.24.hr))
-  tbl$fiat.currency <- tbl$vol.30.day.currency
-  tbl <- tbl[ ,setdiff(colnames(tbl), c('vol.24.hr.currency', 'vol.30.day.currency')) ]
-  return(tbl)
+        stop('Broken!')
+        markets.url = 'http://bitcoincharts.com/markets/'
+        tbls <- readHTMLTable(markets.url)
+        tbl <- tbls[[ 4 ]]
+        tbl <- apply(tbl, 2, str_trim)
+        tbl <- apply(tbl, 2, str_replace_all, '\n|\t', ' ')
+        tbl <- apply(tbl, 2, str_replace_all, ' {2,}', ' ')  
+        tbl <- data.frame(tbl, stringsAsFactors = FALSE)
+        symbol <- sapply(str_split(tbl$Symbol, ' '), last)
+        name <- sapply(sapply(str_split(tbl$Symbol, ' '), 
+                              function(x) x[ 1:(length(x) - 1) ]), paste0, collapse = ' ')
+        last.price <- sapply(str_split(tbl$Latest.Price, ' '), '[', 1)
+        last.price.time <- sapply(sapply(str_split(tbl$Latest.Price, ' '), 
+                                         function(x) x[ 2:length(x) ]), paste0, collapse = ' ')
+        avgs.30.day <- data.frame(matrix(unlist(str_split(tbl$Average, ' ')), 
+                                         ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+        vols.30.day <- data.frame(matrix(unlist(str_split(tbl$Volume, ' ')), 
+                                         ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+        low.high.30.day <- data.frame(matrix(unlist(str_split(tbl$Low.High, ' ')), 
+                                             ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)
+        avgs.24.hr <- data.frame(matrix(unlist(str_split(str_replace(tbl$X24h.Avg., '^—$', 'NA NA NA'), ' ')), 
+                                        ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+        vols.24.hr <- data.frame(matrix(unlist(str_split(tbl$Volume.1, ' ')), 
+                                        ncol = 3, byrow = TRUE), stringsAsFactors = FALSE)
+        low.high.24.hr <- data.frame(matrix(unlist(str_split(tbl$Low.High.1, ' ')), 
+                                            ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)  
+        tbl <- cbind(change = tbl$V1, symbol, name, last.price, last.price.time, avgs.30.day,
+                     tbl$Bid, tbl$Ask, vols.30.day, low.high.30.day, avgs.24.hr, vols.24.hr, 
+                     low.high.24.hr)
+        tbl <- apply(tbl, 2, str_replace_all, ',|%', '')
+        tbl <- apply(tbl, 2, str_replace_all, '—', NA)
+        tbl <- data.frame(tbl, stringsAsFactors = FALSE)
+        tbl <- setNames(tbl, c('change', 'symbol', 'name', 'last.price', 'last.price.when', 
+                               'price.30.day', 'price.30.day.change', 'price.30.day.change.percent',
+                               'bid', 'ask', 
+                               'vol.30.day.btc', 'vol.30.day.fiat', 'vol.30.day.currency',
+                               'low.30.day', 'high.30.day', 
+                               'price.24.hr', 'price.24.hr.change', 'price.24.hr.change.percent',
+                               'vol.24.hr.btc', 'vol.24.hr.fiat', 'vol.24.hr.currency',
+                               'low.24.hr', 'high.24.hr'))
+        tbl <- transform(tbl, 
+                         change = factor(str_trim(str_replace(change, '[A-Z]{3}', ''))),
+                         name = factor(str_trim(name)),
+                         last.price = as.numeric(last.price),
+                         price.30.day = as.numeric(price.30.day),
+                         price.30.day.change = as.numeric(price.30.day.change),
+                         price.30.day.change.percent = as.numeric(price.30.day.change.percent),
+                         bid = as.numeric(bid),
+                         ask = as.numeric(ask),
+                         vol.30.day.btc = as.numeric(vol.30.day.btc), 
+                         vol.30.day.fiat = as.numeric(vol.30.day.fiat), 
+                         vol.30.day.currency = factor(vol.30.day.currency),
+                         low.30.day = as.numeric(low.30.day), 
+                         high.30.day = as.numeric(high.30.day), 
+                         price.24.hr = as.numeric(price.24.hr), 
+                         price.24.hr.change = as.numeric(price.24.hr.change), 
+                         price.24.hr.change.percent = as.numeric(price.24.hr.change.percent),
+                         vol.24.hr.btc = as.numeric(vol.24.hr.btc), 
+                         vol.24.hr.fiat = as.numeric(vol.24.hr.fiat), 
+                         vol.24.hr.currency = factor(vol.24.hr.currency),
+                         low.24.hr = as.numeric(low.24.hr), 
+                         high.24.hr = as.numeric(high.24.hr))
+        tbl$fiat.currency <- tbl$vol.30.day.currency
+        tbl <- tbl[ ,setdiff(colnames(tbl), c('vol.24.hr.currency', 'vol.30.day.currency')) ]
+        return(tbl)
 }
