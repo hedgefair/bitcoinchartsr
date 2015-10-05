@@ -34,7 +34,7 @@ download_data_file <- function(symbol,
         message(url)
         res <- GET(url, verbose(), progress(), write_disk(file.name, overwrite = TRUE))
         stop_for_status(res)
-        message('downloaded')
+        message(' downloaded')
         # now gunzip the file
         new.file.name <- str_replace(file.name, '.gz', '')
         gunzip(filename = file.name, destname = new.file.name, overwrite=TRUE)
@@ -44,6 +44,7 @@ download_data_file <- function(symbol,
 #' @title Download all available archived trade data
 #' @description Download all available data for all markets in one fell swoop. 
 #' Caution! Some exchange data files are > 500 MB!!!
+#' @param active.only download only data files for exchanges listed on http://bitcoincharts.com/markets/
 #' @param data.directory character. Destination directory for downloaded 
 #' data files. Defaults to package install extdata directory.
 #' @param overwrite logical. Whether to overwrite the local copy of the data file.
@@ -56,17 +57,31 @@ download_data_file <- function(symbol,
 #' # Download all available market data in one fell swoop:
 #' downdownload_all_data_files()
 #' }
-download_all_data_files <- function(data.directory = system.file('extdata', 
+download_all_data_files <- function(active.only = TRUE,
+                                    data.directory = system.file('extdata', 
                                                                  mustWork = TRUE, 
                                                                  package = 'bitcoinchartsr'), 
                                     overwrite = FALSE) {
-        # get all csv download links from http://api.bitcoincharts.com/v1/csv/
-        url <- 'http://api.bitcoincharts.com/v1/csv/'
-        pg <- GET(url)
-        stop_for_status(pg)
-        pg <- content(pg)
-        files <- setdiff(unlist(lapply(xpathApply(pg, '//a'), xmlGetAttr, 'href')), '../')
-        urls <- paste0(url, files)
+        urls <- NA
+        if(active.only) {
+                url <- 'http://bitcoincharts.com/markets/'
+                pg <- GET(url)
+                stop_for_status(pg)
+                pg <- content(pg)
+                urls <- unlist(str_extract_all(lapply(xpathApply(pg, '//a'), xmlGetAttr, 'href'), 'markets/.*'))
+                urls <- urls[ which(!str_detect(urls, 'currency')) ]
+                urls <- str_replace_all(urls, 'markets/|\\.html|list/|currencies/', '')
+                urls <- urls[ urls != '' ]
+                urls <- paste0('http://api.bitcoincharts.com/v1/csv/', urls, '.csv.gz')
+        } else {
+                # get all csv download links from http://api.bitcoincharts.com/v1/csv/
+                url <- 'http://api.bitcoincharts.com/v1/csv/'
+                pg <- GET(url)
+                stop_for_status(pg)
+                pg <- content(pg)
+                files <- setdiff(unlist(lapply(xpathApply(pg, '//a'), xmlGetAttr, 'href')), '../')
+                urls <- paste0(url, files)        
+        }
         # download the files if needed
         file.names <- lapply(sample(urls), function(url) {
                 message(url)
@@ -77,7 +92,7 @@ download_all_data_files <- function(data.directory = system.file('extdata',
                 if(overwrite | !exists(file.name)) {
                         res <- GET(url, verbose(), progress(), write_disk(file.name, overwrite = TRUE))
                         stop_for_status(res)
-                        message('downloaded')
+                        message(' downloaded')
                         Sys.sleep(1)
                         # now gunzip the file
                         new.file.name <- str_replace(file.name, '.gz', '')
