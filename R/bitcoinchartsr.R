@@ -64,14 +64,10 @@ download_all_data_files <- function(active.only = TRUE,
                                     overwrite = FALSE) {
         urls <- NA
         if(active.only) {
-                url <- 'http://bitcoincharts.com/markets/'
-                pg <- GET(url)
-                stop_for_status(pg)
-                pg <- content(pg)
-                urls <- unlist(str_extract_all(lapply(xpathApply(pg, '//a'), xmlGetAttr, 'href'), 'markets/.*'))
-                urls <- urls[ which(!str_detect(urls, 'currency')) ]
-                urls <- str_replace_all(urls, 'markets/|\\.html|list/|currencies/', '')
-                urls <- urls[ urls != '' ]
+                urls <- GET('http://bitcoincharts.com/markets/')
+                stop_for_status(urls)
+                urls <- content(urls)
+                urls <- unlist(lapply(xpathApply(urls, '//span[ @class = "sub" ]//a'), xmlValue))
                 urls <- paste0('http://api.bitcoincharts.com/v1/csv/', urls, '.csv.gz')
         } else {
                 # get all csv download links from http://api.bitcoincharts.com/v1/csv/
